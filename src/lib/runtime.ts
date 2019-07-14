@@ -270,7 +270,7 @@ export async function runProgram(program: any) {
 
     // 1b. Handle Global --version Option
     if (GlobalSettings.enableVersionOption && hasOption(['version', 'ver', 'v'])) {
-        return Help.program(program.config)
+        return Help.version(program.config)
     }
 
     // 2. Handle Program Options
