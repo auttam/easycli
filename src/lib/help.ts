@@ -297,5 +297,6 @@ export function command(config: any, name: string) {
 
 /** Prints version info */
 export function version(config: any) {
-    console.log('version: ', config.version)
+    console.log()
+    console.log(config.name + ' v' + config.version)
 }
