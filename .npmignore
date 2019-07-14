@@ -1,0 +1,27 @@
+# source code
+src
+.ts
+
+# vs code editor settings 
+.vscode
+
+# test cmds
+*.cmd
+
+# tsc config
+tsconfig.json
+
+# source map file
+.map
+
+# debug files
+.log
+
+# misc
+.npmignore
+*.zip
+*.tgz
+demo
+
+# test specs
+test/

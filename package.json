@@ -1,0 +1,39 @@
+{
+  "name": "@auttam/easycli",
+  "version": "0.0.1",
+  "description": "A quick and easy way of creating cli for your npm package.",
+  "main": "index.js",
+  "scripts": {
+    "build": "./node_modules/.bin/tsc",
+    "start": "./node_modules/.bin/tsc --watch",
+    "test": "./node_modules/.bin/mocha"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/auttam/easycli.git"
+  },
+  "keywords": [
+    "cli",
+    "easy-cli",
+    "quick-cli",
+    "simple-cli"
+  ],
+  "author": "Ashish Uttam",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/auttam/easycli/issues"
+  },
+  "homepage": "https://github.com/auttam/easycli#readme",
+  "dependencies": {
+    "minimist": "^1.2.0",
+    "string-width": "^4.1.0"
+  },
+  "devDependencies": {
+    "@types/chai": "^4.1.7",
+    "@types/mocha": "^5.2.7",
+    "@types/node": "^6.0.112",
+    "chai": "^4.2.0",
+    "mocha": "^6.1.4",
+    "typescript": "^3.5.1"
+  }
+}
