@@ -278,7 +278,7 @@ export async function runProgram(program: any) {
 
     // checking if programOptions has properties other than '_'
     if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.prioritizeProgramOptions === true)) {
-        return callback(program, 'onProgramOption', getParams(), programOptions)
+        return callback(program, 'onProgramOption', await getParams(), programOptions)
     }
 
     // 3. Handle Program Command
@@ -321,7 +321,7 @@ export async function runCommand(program: any, reqCommandName: string) {
 
         // otherwise if maxCommandIteration is not reached, calling onInvalidCommand 
         if (commandIteration <= maxCommandIteration) {
-            return callback(program, 'onInvalidCommand', reqCommandName, getParams(), getOptions())
+            return callback(program, 'onInvalidCommand', reqCommandName, await getParams(), getOptions())
         }
 
         // finally showing program help
