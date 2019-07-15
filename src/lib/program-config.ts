@@ -46,8 +46,8 @@ export class ProgramConfiguration {
             }
 
             // setting default command if it exists in the 
-            if (GlobalSettings.defaultCommandMethod && typeof target[GlobalSettings.defaultCommandMethod] == 'function') {
-                config.defaultCommand = GlobalSettings.defaultCommandMethod
+            if (GlobalSettings.defaultCommandMethod() && typeof target[GlobalSettings.defaultCommandMethod()] == 'function') {
+                config.defaultCommand = GlobalSettings.defaultCommandMethod()
             }
 
             // Injecting configuration to the target object

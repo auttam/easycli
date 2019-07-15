@@ -1,10 +1,10 @@
-import { SettingInterface } from './global-settings'
+import { GlobalSettings } from './global-settings'
 import { ProgramConfiguration } from './program-config'
 import * as Runtime from './runtime'
 import { RuntimeError } from './types/errors'
 
 /** A base class for a cli program */
-export class Program extends SettingInterface {
+export class Program extends GlobalSettings {
     public config: ProgramConfiguration
 
     // Initialization:

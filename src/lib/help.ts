@@ -221,7 +221,7 @@ function programHelp(config: ProgramConfiguration) {
     var globalHelp = []
 
     // global help options
-    if (GlobalSettings.enableHelpOption) {
+    if (GlobalSettings.helpCommandEnabled()) {
         globalHelp.push([config.binaryName + ' --help, -h', 'To view help'])
         if (config.hasRealCommand()) {
             globalHelp.push([config.binaryName + ' <command> --help, -h', 'To view command help'])
@@ -229,12 +229,12 @@ function programHelp(config: ProgramConfiguration) {
     }
 
     // global version option
-    if (GlobalSettings.enableVersionOption) {
+    if (GlobalSettings.versionOptionEnabled()) {
         globalHelp.push([config.binaryName + ' --version, -v', 'To view help'])
     }
 
     // help command
-    if (GlobalSettings.enableHelpCommand) {
+    if (GlobalSettings.helpCommandEnabled()) {
         globalHelp.push([config.binaryName + ' hep', 'To view help'])
     }
 

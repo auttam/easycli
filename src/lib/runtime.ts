@@ -47,13 +47,13 @@ export function init() {
     // Validating start index for reading command line arguments
 
     // checking startIndex must be a number 
-    if (GlobalSettings.processArgvStartIndex && isNaN(GlobalSettings.processArgvStartIndex)) {
-        throw new RuntimeError('Cannot read command line arguments, invalid index', GlobalSettings.processArgvStartIndex)
+    if (GlobalSettings.processArgvStartIndex() && isNaN(GlobalSettings.processArgvStartIndex())) {
+        throw new RuntimeError('Cannot read command line arguments, invalid index', GlobalSettings.processArgvStartIndex())
     }
 
     // startIndex must be greater than equal to 2
-    if (GlobalSettings.processArgvStartIndex < 2) {
-        throw new RuntimeError('Index to start read command line arguments from must be greater than equal to 2', GlobalSettings.processArgvStartIndex)
+    if (GlobalSettings.processArgvStartIndex() < 2) {
+        throw new RuntimeError('Index to start read command line arguments from must be greater than equal to 2', GlobalSettings.processArgvStartIndex())
     }
 
 }
@@ -65,11 +65,11 @@ export function readArgs() {
     if (isReadingDone) return
 
     // reading raw arguments
-    retrievedArgs = process.argv.slice(GlobalSettings.processArgvStartIndex)
+    retrievedArgs = process.argv.slice(GlobalSettings.processArgvStartIndex())
 
     // parsing raw arguments into minimist's parsed object
-    if (GlobalSettings.minimistOptions) {
-        parsedArgs = minimist(retrievedArgs, GlobalSettings.minimistOptions)
+    if (GlobalSettings.minimistOptionsObject()) {
+        parsedArgs = minimist(retrievedArgs, GlobalSettings.minimistOptionsObject())
     } else {
         parsedArgs = minimist(retrievedArgs)
     }
@@ -264,12 +264,12 @@ export async function runProgram(program: any) {
     // 1. Handle global options
 
     // 1a. Handle Global --help Option
-    if (GlobalSettings.enableHelpOption && hasOption('help')) {
+    if (GlobalSettings.helpOptionEnabled() && hasOption('help')) {
         return Help.command(program.config, getCommandName())
     }
 
     // 1b. Handle Global --version Option
-    if (GlobalSettings.enableVersionOption && hasOption(['version', 'ver', 'v'])) {
+    if (GlobalSettings.versionOptionEnabled() && hasOption(['version', 'ver', 'v'])) {
         return Help.version(program.config)
     }
 
@@ -277,14 +277,14 @@ export async function runProgram(program: any) {
     var programOptions = getOptions(program.config.options)
 
     // checking if programOptions has properties other than '_'
-    if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.prioritizeProgramOptions === true)) {
+    if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.programOptionsPrioritized() === true)) {
         return callback(program, 'onProgramOption', await getParams(), programOptions)
     }
 
     // 3. Handle Program Command
 
     // Check when no arguments are passed
-    if (!argsCount() && GlobalSettings.showHelpOnNoCommand) {
+    if (!argsCount() && GlobalSettings.showHelpOnNoCommand()) {
         return Help.program(program.config)
     }
 
@@ -292,7 +292,7 @@ export async function runProgram(program: any) {
     var reqCommandName = getCommandName() || program.config.defaultCommand
 
     // Check when command or even default command is missing, 
-    if (!reqCommandName && GlobalSettings.showHelpOnNoCommand) {
+    if (!reqCommandName && GlobalSettings.showHelpOnNoCommand()) {
         return Help.program(program.config)
     }
 
@@ -304,7 +304,7 @@ export async function runProgram(program: any) {
 export async function runCommand(program: any, reqCommandName: string) {
     commandIteration++
     // handling help command
-    if (reqCommandName == 'help' && GlobalSettings.enableHelpCommand) {
+    if (reqCommandName == 'help' && GlobalSettings.helpCommandEnabled()) {
         return Help.program(program.config)
     }
 
@@ -315,7 +315,7 @@ export async function runCommand(program: any, reqCommandName: string) {
     if (!command) {
 
         // showing help if such setting found
-        if (GlobalSettings.showHelpOnInvalidCommand) {
+        if (GlobalSettings.showHelpOnInvalidCommand()) {
             return Help.program(program.config)
         }
 
@@ -335,7 +335,7 @@ export async function runCommand(program: any, reqCommandName: string) {
     }
     catch (ex) {
         // Showing command help
-        if (GlobalSettings.showHelpOnInvalidParams) {
+        if (GlobalSettings.showHelpOnInvalidParams()) {
             return Help.command(program.config, reqCommandName)
         }
 
