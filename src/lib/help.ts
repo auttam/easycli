@@ -119,7 +119,22 @@ function printProgramInfo(programInfo: IProgramInfo) {
 /** Prints program usage */
 function printProgramUsage(config: ProgramConfiguration) {
     console.log()
-    console.log('Usage: ' + config.binaryName + (config.hasRealCommand() ? ' <command>' : '') + (config.options.length ? ' [options ...]' : ''))
+    if (GlobalSettings.enableCommands()) {
+        console.log('Usage: ' + config.binaryName + (config.hasRealCommand() ? ' <command>' : '') + (config.options.length ? ' [options ...]' : ''))
+    } else {
+        var usage = 'Usage: ' + config.binaryName
+        if (config.params.length) {
+            if (config.params.length == 1) {
+                usage += ' <' + Array.from(config.params.getItems())[0].name + '>'
+            } else {
+                usage += ' [params ...]'
+            }
+        }
+        if (config.options.length) {
+            usage += ' [options ...]'
+        }
+        console.log(usage)
+    }
 }
 
 /** Prints command list */
@@ -163,7 +178,7 @@ function printParamsList(params: ParamCollection) {
     if (!params || !params.length) return
 
     console.log()
-    console.log('Command Parameters:')
+    console.log('Parameters:')
     console.log()
     var columnCollection = []
     for (var param of params.getItems()) {
@@ -205,9 +220,15 @@ function programHelp(config: ProgramConfiguration) {
     // print program usage
     printProgramUsage(config)
 
-    // print command list
-    if (config.hasRealCommand()) {
-        printCommandList(config, config.commands)
+    if (GlobalSettings.enableCommands()) {
+        // print command list
+        if (config.hasRealCommand()) {
+            printCommandList(config, config.commands)
+        }
+    } else {
+        if (config.params.length) {
+            printParamsList(config.params)
+        }
     }
 
     // print program options
@@ -219,21 +240,21 @@ function programHelp(config: ProgramConfiguration) {
     var globalHelp = []
 
     // global help options
-    if (GlobalSettings.helpCommandEnabled()) {
+    if (GlobalSettings.enableHelpCommand()) {
         globalHelp.push([config.binaryName + ' --help, -h', 'To view help'])
-        if (config.hasRealCommand()) {
+        if (config.hasRealCommand() && GlobalSettings.enableCommands()) {
             globalHelp.push([config.binaryName + ' <command> --help, -h', 'To view command help'])
         }
     }
 
     // global version option
-    if (GlobalSettings.versionOptionEnabled()) {
+    if (GlobalSettings.enableVersionOption()) {
         globalHelp.push([config.binaryName + ' --version, -v', 'To view help'])
     }
 
     // help command
-    if (GlobalSettings.helpCommandEnabled()) {
-        globalHelp.push([config.binaryName + ' hep', 'To view help'])
+    if (GlobalSettings.enableHelpCommand()) {
+        globalHelp.push([config.binaryName + ' help', 'To view help'])
     }
 
     if (globalHelp && globalHelp.length) {
@@ -244,7 +265,6 @@ function programHelp(config: ProgramConfiguration) {
     }
 
 }
-
 
 function commandHelp(config: ProgramConfiguration, commandName?: string) {
     if (!commandName) return

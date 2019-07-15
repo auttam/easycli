@@ -16,6 +16,7 @@ export interface IEntityInfo {
 export interface IOptionInfo extends IEntityInfo {
     // alias for the option
     alias?: string | string[]
+    choices?: string[]
 }
 
 /** Types of Command Params */
@@ -56,6 +57,9 @@ export interface IProgramInfo extends IEntityInfo {
 
     /** list of the program options */
     options?: IOptionInfo[]
+
+    /** list of program params */
+    params?: IParamInfo
 
     /** name of the default command, used when command parameter is not passed from cli */
     defaultCommand?: string,

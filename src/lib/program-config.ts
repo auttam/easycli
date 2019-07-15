@@ -1,5 +1,6 @@
 import { CommandCollection } from './types/collections/commands'
 import { OptionCollection } from './types/collections/options'
+import { ParamCollection } from './types/collections/params'
 import { hyphenate, separateWords, getPropertyValue } from './utils'
 import { GlobalSettings } from './global-settings'
 import { IProgramInfo } from './types/info-objects'
@@ -16,6 +17,7 @@ export class ProgramConfiguration {
     // Command and Program Options
     public readonly commands: CommandCollection = new CommandCollection()
     public readonly options: OptionCollection = new OptionCollection()
+    public readonly params: ParamCollection = new ParamCollection()
 
     /** Initializes default configuration for the target object and injects 
      *  it into the target. If target already has an instance configuration, 
@@ -33,16 +35,19 @@ export class ProgramConfiguration {
                 config.binaryName = hyphenate(target.constructor.name)
             }
 
-            // collecting names of commands using command convention
-            for (var prop of Object.getOwnPropertyNames(Object.getPrototypeOf(target))) {
-                if (typeof target[prop] == 'function' && prop.endsWith('Command')
-                    && GlobalSettings.noCommandMethodList().indexOf(prop) == -1) {
+            // Check if target is not Program Class itself
+            if (target.constructor.name != "Program") {
+                // collecting names of commands using command convention
+                for (var prop of Object.getOwnPropertyNames(Object.getPrototypeOf(target))) {
+                    if (typeof target[prop] == 'function' && prop.endsWith('Command')
+                        && GlobalSettings.noCommandMethodList().indexOf(prop) == -1) {
 
-                    // creating name by removing 'Command' suffix
-                    var name = prop.substr(0, prop.lastIndexOf('Command'))
+                        // creating name by removing 'Command' suffix
+                        var name = prop.substr(0, prop.lastIndexOf('Command'))
 
-                    // adding command to command collection
-                    config.commands.add({ method: prop, name: name })
+                        // adding command to command collection
+                        config.commands.add({ method: prop, name: name })
+                    }
                 }
             }
 
@@ -69,6 +74,9 @@ export class ProgramConfiguration {
 
         // merging options
         this.options.mergeList(config.options)
+
+        // merging params
+        this.params.mergeList(config.params)
 
         // merging commands
         this.commands.mergeList(config.commands)

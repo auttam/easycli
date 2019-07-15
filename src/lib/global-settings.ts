@@ -30,7 +30,7 @@ const settingStore: any = {
     // Command mode related
 
     // flgag to enable/disable program commands
-    programCommandEnabled: true,
+    programCommandsEnabled: true,
 
     // flag to enable/disabled default help command
     helpCommandEnabled: true,
@@ -43,6 +43,9 @@ const settingStore: any = {
 
     // flag to show help on invalid parameter, like required param missing, wrong value for choice etc.
     showHelpOnInvalidParams: true,
+
+    // flag to show help on invalid options, currently on wrong value for choice etc.
+    showHelpOnInvalidOptions: true,
 
     // name of the default command, when no command is specified
     defaultCommandMethod: 'defaultCommand',
@@ -98,7 +101,7 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to enable global help option '--help, -h' */
-    static helpOptionEnabled(enable?: boolean) {
+    static enableHelpOption(enable?: boolean) {
         if (typeof enable == "undefined") {
             return settingStore.helpOptionEnabled
         }
@@ -108,7 +111,7 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to enable global version option '--version, v' */
-    static versionOptionEnabled(enable?: boolean) {
+    static enableVersionOption(enable?: boolean) {
         if (typeof enable == "undefined") {
             return settingStore.versionOptionEnabled
         }
@@ -118,17 +121,17 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to enable program commands */
-    static programCommandEnabled(enable?: boolean) {
+    static enableCommands(enable?: boolean) {
         if (typeof enable == "undefined") {
-            return settingStore.programCommandEnabled
+            return settingStore.programCommandsEnabled
         }
         if (typeof enable == "boolean") {
-            settingStore.programCommandEnabled = enable
+            settingStore.programCommandsEnabled = enable
         }
     }
 
     /** Gets/sets flag to enable/disabled default help command */
-    static helpCommandEnabled(enable?: boolean) {
+    static enableHelpCommand(enable?: boolean) {
         if (typeof enable == "undefined") {
             return settingStore.helpCommandEnabled
         }
@@ -167,6 +170,16 @@ export abstract class GlobalSettings {
         }
     }
 
+    /** Gets/sets flag to show help on invalid options, currently on wrong value for choice etc. */
+    static showHelpOnInvalidOptions(enable?: boolean) {
+        if (typeof enable == "undefined") {
+            return settingStore.showHelpOnInvalidOptions
+        }
+        if (typeof enable == "boolean") {
+            settingStore.showHelpOnInvalidOptions = enable
+        }
+    }
+
     /** Gets/sets name of the method to call when command name not specified */
     static defaultCommandMethod(name?: string) {
         if (typeof name == "undefined") {
@@ -187,12 +200,12 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to priortize program options, i.e. call 'onProgramOption' even when command has options */
-    static programOptionsPrioritized(enable?: boolean) {
+    static prioritizeProgramOptions(enable?: boolean) {
         if (typeof enable == "undefined") {
-            return settingStore.abc
+            return settingStore.programOptionsPrioritized
         }
         if (typeof enable == "boolean") {
-            settingStore.abc = enable
+            settingStore.programOptionsPrioritized = enable
         }
     }
 

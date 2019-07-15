@@ -75,10 +75,12 @@ export function readArgs() {
     }
 
     // Getting command name from cli arguments
-    commandName = parsedArgs._ && parsedArgs._.length ? parsedArgs._[0] : ''
+    if (GlobalSettings.enableCommands()) {
+        commandName = parsedArgs._ && parsedArgs._.length ? parsedArgs._[0] : ''
+        parsedArgs._.shift()
+    }
 
     // Getting Params
-    parsedArgs._.shift()
     paramList = parsedArgs._ || []
 
     // Getting options
@@ -122,8 +124,18 @@ export function hasOption(searchFor?: string | string[]): boolean {
     return false
 }
 
+
+function getChoice(choices: string[], value: string, name: string): void | string {
+    // single value from choice 
+    if (choices.indexOf(value) == -1) {
+        throw new RuntimeError(`Value not allowed for ${name}`, 'allowed values are ' + choices.join(', '))
+    }
+
+    return value
+}
+
 /** Returns an object containing all the options passed from the cli that matches to the collection*/
-export function getOptions(optionCollection?: OptionCollection) {
+export async function getOptions(optionCollection?: OptionCollection) {
 
     var matchedOptions: any = {}
 
@@ -135,18 +147,33 @@ export function getOptions(optionCollection?: OptionCollection) {
     // iterating over all defined options in the collection
     for (var option of optionCollection.getItems()) {
 
+        var value = null
+
+        var name = option.name || ''
+
         // matching with option name
         if (option.name && optionsObject.hasOwnProperty(option.name)) {
-            matchedOptions[option.name] = optionsObject[option.name]
+            value = optionsObject[option.name]
         }
 
         // matching with aliases
         if (option.alias && option.alias.length) {
             for (var alias of option.alias) {
                 if (optionsObject.hasOwnProperty(alias)) {
-                    matchedOptions[alias] = optionsObject[alias]
+                    value = optionsObject[alias]
+                    name = option.name || alias
                 }
             }
+        }
+
+        // checking for choice
+        if (value && Array.isArray(option.choices)) {
+            value = getChoice(option.choices, value, name)
+        }
+
+        // assigning value
+        if (value && name) {
+            matchedOptions[name] = value
         }
     }
 
@@ -168,8 +195,10 @@ export async function getParams(paramCollection?: ParamCollection) {
 
     // return all params if collection is not present
     // or is empty
-    if (!paramCollection || !paramCollection.length) return {
-        _: Array.from(paramList)
+    if (!paramCollection || !paramCollection.length) {
+        return {
+            _: Array.from(paramList)
+        }
     }
 
     // first param to process
@@ -205,7 +234,6 @@ export async function getParams(paramCollection?: ParamCollection) {
             currentParamListIdx++
             continue
         }
-
         // list of values
         if (param.type == ParamType.LIST) {
             paramMap[param.name] = paramList.slice(currentParamListIdx)
@@ -214,18 +242,23 @@ export async function getParams(paramCollection?: ParamCollection) {
         }
 
         // single value from choice 
-        if (param.type == ParamType.CHOICE) {
-            param.choices = param.choices || []
-            if (param.choices.indexOf(paramList[currentParamListIdx]) == -1) {
-                throw new RuntimeError(`Unexpected parameter value expected: ${param.choices.join(', ')}`, param.name)
-            }
-            paramMap[param.name] = paramList[currentParamListIdx]
+
+        // if (param.type == ParamType.CHOICE) {
+        //     param.choices = param.choices || []
+        //     if (param.choices.indexOf(paramList[currentParamListIdx]) == -1) {
+        //         throw new RuntimeError(`Unexpected parameter value expected: ${param.choices.join(', ')}`, param.name)
+        //     }
+        //     paramMap[param.name] = paramList[currentParamListIdx]
+        //     currentParamListIdx++
+        //     continue
+        // }
+        if (param.type == ParamType.CHOICE && Array.isArray(param.choices)) {
+            paramMap[param.name] = getChoice(param.choices, paramList[currentParamListIdx], param.name)
             currentParamListIdx++
             continue
         }
-
-        return paramMap
     }
+    return paramMap
 }
 
 /** Attaches event handler to process events */
@@ -258,35 +291,71 @@ export async function runProgram(program: any) {
     if (!program) throw new RuntimeError('Unable to run the program')
     if (!program.config) throw new RuntimeError('Unable to run the program, program configuration missing')
 
-    // 1. Read Cli Arguments
+    // 1. Read all arguments from command lines
     readArgs()
 
-    // 1. Handle global options
-
-    // 1a. Handle Global --help Option
-    if (GlobalSettings.helpOptionEnabled() && hasOption('help')) {
-        return Help.command(program.config, getCommandName())
-    }
-
-    // 1b. Handle Global --version Option
-    if (GlobalSettings.versionOptionEnabled() && hasOption(['version', 'ver', 'v'])) {
-        return Help.version(program.config)
-    }
-
-    // 2. Handle Program Options
-    var programOptions = getOptions(program.config.options)
-
-    // checking if programOptions has properties other than '_'
-    if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.programOptionsPrioritized() === true)) {
-        return callback(program, 'onProgramOption', await getParams(), programOptions)
-    }
-
-    // 3. Handle Program Command
-
-    // Check when no arguments are passed
+    // Show program help when no arguments are passed
     if (!argsCount() && GlobalSettings.showHelpOnNoCommand()) {
         return Help.program(program.config)
     }
+
+    // 2. Handle global options
+
+    // 2a. Handle Global --help Option
+    if (GlobalSettings.enableHelpOption() && hasOption(['help', 'h'])) {
+        return Help.command(program.config, getCommandName())
+    }
+
+    // 2b. Handle Global --version Option
+    if (GlobalSettings.enableVersionOption() && hasOption(['version', 'ver', 'v'])) {
+        return Help.version(program.config)
+    }
+
+    // 3. Handle Program Options
+    var programOptions = {}
+    try {
+        programOptions = await getOptions(program.config.options)
+    }
+    catch (ex) {
+        // Showing command help
+        if (GlobalSettings.showHelpOnInvalidOptions()) {
+            console.error(ex.message)
+            return Help.program(program.config)
+        }
+
+        // Otherwise re-throwing exception
+        throw ex
+    }
+
+
+    // call 'onProgramOptions' when - 
+    // 1. programOptions are defined AND 
+    // 2. program commands are enabled AND
+    // 3. command name is empty OR program options have move priority than command options
+    // otherwise all optinos must be treated as command options and will be passed to command method
+    if (Object.keys(programOptions).length > 1 && GlobalSettings.enableCommands() && (!getCommandName() || GlobalSettings.prioritizeProgramOptions() === true)) {
+        return callback(program, 'onProgramOption', await getParams(), programOptions)
+    }
+
+    // 4. Handle Program Commands disabled mode
+    if (!GlobalSettings.enableCommands()) {
+        try {
+            var programParams = await getParams(program.config.params)
+
+            // executing main method
+            return callback(program, GlobalSettings.mainMethod(), programParams, programOptions)
+        } catch (ex) {
+            // Showing command help
+            if (GlobalSettings.showHelpOnInvalidParams()) {
+                return Help.program(program.config)
+            }
+
+            // Otherwise re-throwing exception
+            throw ex
+        }
+    }
+
+    // 5. Handle Program Command
 
     // Get requested command
     var reqCommandName = getCommandName() || program.config.defaultCommand
@@ -303,15 +372,16 @@ export async function runProgram(program: any) {
 /** Start running a program command */
 export async function runCommand(program: any, reqCommandName: string) {
     commandIteration++
-    // handling help command
-    if (reqCommandName == 'help' && GlobalSettings.helpCommandEnabled()) {
+
+    // handling global help command
+    if (reqCommandName == 'help' && GlobalSettings.enableHelpCommand()) {
         return Help.program(program.config)
     }
 
     // getting command object for requested command name
     var command = program.config.commands.getByName(reqCommandName)
 
-    // Handling invalid command
+    // Handling invalid command / command not found
     if (!command) {
         // showing help if such setting found
         if (GlobalSettings.showHelpOnNoCommand()) {
@@ -320,7 +390,7 @@ export async function runCommand(program: any, reqCommandName: string) {
 
         // otherwise if maxCommandIteration is not reached, calling onInvalidCommand 
         if (commandIteration <= maxCommandIteration) {
-            return callback(program, 'onInvalidCommand', reqCommandName, await getParams(), getOptions())
+            return callback(program, 'onInvalidCommand', reqCommandName, await getParams(), await getOptions())
         }
 
         // finally showing program help
@@ -343,20 +413,39 @@ export async function runCommand(program: any, reqCommandName: string) {
     }
 
     // Getting command options
-    var options = getOptions(program.config.options)
+    var options = {}
+    try {
+        options = await getOptions(command.options)
+    }
+    catch (ex) {
+        // Showing command help
+        if (GlobalSettings.showHelpOnInvalidOptions()) {
+            return Help.command(program.config, reqCommandName)
+        }
+
+        // Otherwise re-throwing exception
+        throw ex
+    }
+
 
     // executing command
     return callback(program, command.methodName, params, options)
 
 }
 
-export function exitProgram(program: any, exitCode: number = 0) {
+/** Exits the program. If exitProcess is set, exits the process manually */
+export function exitProgram(program: any, exitCode: number = 0, exitProcess = false) {
 
     callback(program, 'onExit', exitCode).then(newExitCode => {
         process.exitCode = typeof newExitCode == 'undefined' ? exitCode : newExitCode
+        if (exitProcess) {
+            process.exit()
+        }
     }).catch(err => {
         console.error(err)
+        if (exitProcess) {
+            process.exit()
+        }
     })
 
 }
-

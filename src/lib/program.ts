@@ -3,6 +3,8 @@ import { ProgramConfiguration } from './program-config'
 import * as Runtime from './runtime'
 import { RuntimeError } from './types/errors'
 
+import * as Help from './help'
+
 /** A base class for a cli program */
 export class Program extends GlobalSettings {
     public config: ProgramConfiguration
@@ -58,8 +60,22 @@ export class Program extends GlobalSettings {
         })
     }
 
+    /** Runs a command manually */
     protected runCommand(commandName: string) {
         return Runtime.runCommand(this, commandName)
+    }
+
+    /** Shows program or command help */
+    protected help(commandName?: string) {
+        if (commandName) {
+            return Help.command(this.config, commandName)
+        }
+        return Help.program(this.config) // call Help.program
+    }
+
+    /** Exits program and ends the current process  */
+    protected exit(code?: number) {
+        Runtime.exitProgram(code)
     }
 }
 
