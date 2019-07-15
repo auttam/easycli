@@ -35,7 +35,8 @@ export class ProgramConfiguration {
 
             // collecting names of commands using command convention
             for (var prop of Object.getOwnPropertyNames(Object.getPrototypeOf(target))) {
-                if (typeof target[prop] == 'function' && prop.endsWith('Command')) {
+                if (typeof target[prop] == 'function' && prop.endsWith('Command')
+                    && GlobalSettings.noCommandMethodList().indexOf(prop) == -1) {
 
                     // creating name by removing 'Command' suffix
                     var name = prop.substr(0, prop.lastIndexOf('Command'))
