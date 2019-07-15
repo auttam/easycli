@@ -313,9 +313,8 @@ export async function runCommand(program: any, reqCommandName: string) {
 
     // Handling invalid command
     if (!command) {
-
         // showing help if such setting found
-        if (GlobalSettings.showHelpOnInvalidCommand()) {
+        if (GlobalSettings.showHelpOnNoCommand()) {
             return Help.program(program.config)
         }
 
