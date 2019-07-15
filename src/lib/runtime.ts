@@ -264,12 +264,12 @@ export async function runProgram(program: any) {
     // 1. Handle global options
 
     // 1a. Handle Global --help Option
-    if (GlobalSettings.helpOptionEnabled() && hasOption('help')) {
+    if (GlobalSettings.enableHelpOption() && hasOption('help')) {
         return Help.command(program.config, getCommandName())
     }
 
     // 1b. Handle Global --version Option
-    if (GlobalSettings.versionOptionEnabled() && hasOption(['version', 'ver', 'v'])) {
+    if (GlobalSettings.enableVersionOption() && hasOption(['version', 'ver', 'v'])) {
         return Help.version(program.config)
     }
 
@@ -304,7 +304,7 @@ export async function runProgram(program: any) {
 export async function runCommand(program: any, reqCommandName: string) {
     commandIteration++
     // handling help command
-    if (reqCommandName == 'help' && GlobalSettings.helpCommandEnabled()) {
+    if (reqCommandName == 'help' && GlobalSettings.enableHelpCommand()) {
         return Help.program(program.config)
     }
 

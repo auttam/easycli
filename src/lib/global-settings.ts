@@ -30,7 +30,7 @@ const settingStore: any = {
     // Command mode related
 
     // flgag to enable/disable program commands
-    programCommandEnabled: true,
+    programCommandsEnabled: true,
 
     // flag to enable/disabled default help command
     helpCommandEnabled: true,
@@ -98,7 +98,7 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to enable global help option '--help, -h' */
-    static helpOptionEnabled(enable?: boolean) {
+    static enableHelpOption(enable?: boolean) {
         if (typeof enable == "undefined") {
             return settingStore.helpOptionEnabled
         }
@@ -108,7 +108,7 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to enable global version option '--version, v' */
-    static versionOptionEnabled(enable?: boolean) {
+    static enableVersionOption(enable?: boolean) {
         if (typeof enable == "undefined") {
             return settingStore.versionOptionEnabled
         }
@@ -118,17 +118,17 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to enable program commands */
-    static programCommandEnabled(enable?: boolean) {
+    static enableCommands(enable?: boolean) {
         if (typeof enable == "undefined") {
-            return settingStore.programCommandEnabled
+            return settingStore.programCommandsEnabled
         }
         if (typeof enable == "boolean") {
-            settingStore.programCommandEnabled = enable
+            settingStore.programCommandsEnabled = enable
         }
     }
 
     /** Gets/sets flag to enable/disabled default help command */
-    static helpCommandEnabled(enable?: boolean) {
+    static enableHelpCommand(enable?: boolean) {
         if (typeof enable == "undefined") {
             return settingStore.helpCommandEnabled
         }
