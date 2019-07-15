@@ -82,7 +82,7 @@ export class ProgramConfiguration {
         if (this.commands.length > 1) return true
 
         // only 1 command present, it its not real command if matches default command
-        if (this.commands.length == 1) return !this.commands.hasMethod(this.defaultCommand)
+        if (this.commands.length == 1) return !this.commands.hasMethod(GlobalSettings.defaultCommandMethod())
     }
 
     /** Gets program info */

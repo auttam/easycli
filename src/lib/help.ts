@@ -130,15 +130,13 @@ function printCommandList(config: ProgramConfiguration, commands: CommandCollect
 
     var columnCollection = []
     for (var command of commands.getItems()) {
+        // no need to include default command if it has default method name
+        if (command.methodName == GlobalSettings.defaultCommandMethod()) { continue }
         columnCollection.push([command.commandName, command.description])
     }
 
     // printing command list
     printColumnar(columnCollection)
-    // console.log()
-    // console.log(' '.repeat(defaultLeftIndent) + 'To get more help type: ')
-    // console.log(' '.repeat(defaultLeftIndent) + config.binaryName + ' <command> --help')
-
 }
 
 /** Prints options list*/
