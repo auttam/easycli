@@ -187,12 +187,12 @@ export abstract class GlobalSettings {
     }
 
     /** Gets/sets flag to priortize program options, i.e. call 'onProgramOption' even when command has options */
-    static programOptionsPrioritized(enable?: boolean) {
+    static prioritizeProgramOptions(enable?: boolean) {
         if (typeof enable == "undefined") {
-            return settingStore.abc
+            return settingStore.programOptionsPrioritized
         }
         if (typeof enable == "boolean") {
-            settingStore.abc = enable
+            settingStore.programOptionsPrioritized = enable
         }
     }
 

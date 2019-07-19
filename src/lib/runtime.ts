@@ -223,9 +223,8 @@ export async function getParams(paramCollection?: ParamCollection) {
             currentParamListIdx++
             continue
         }
-
-        return paramMap
     }
+    return paramMap
 }
 
 /** Attaches event handler to process events */
@@ -264,7 +263,7 @@ export async function runProgram(program: any) {
     // 1. Handle global options
 
     // 1a. Handle Global --help Option
-    if (GlobalSettings.enableHelpOption() && hasOption('help')) {
+    if (GlobalSettings.enableHelpOption() && hasOption(['help', 'h'])) {
         return Help.command(program.config, getCommandName())
     }
 
@@ -277,7 +276,7 @@ export async function runProgram(program: any) {
     var programOptions = getOptions(program.config.options)
 
     // checking if programOptions has properties other than '_'
-    if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.programOptionsPrioritized() === true)) {
+    if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.prioritizeProgramOptions() === true)) {
         return callback(program, 'onProgramOption', await getParams(), programOptions)
     }
 
