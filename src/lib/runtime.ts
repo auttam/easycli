@@ -75,10 +75,12 @@ export function readArgs() {
     }
 
     // Getting command name from cli arguments
-    commandName = parsedArgs._ && parsedArgs._.length ? parsedArgs._[0] : ''
+    if (GlobalSettings.enableCommands()) {
+        commandName = parsedArgs._ && parsedArgs._.length ? parsedArgs._[0] : ''
+        parsedArgs._.shift()
+    }
 
     // Getting Params
-    parsedArgs._.shift()
     paramList = parsedArgs._ || []
 
     // Getting options
@@ -144,7 +146,7 @@ export function getOptions(optionCollection?: OptionCollection) {
         if (option.alias && option.alias.length) {
             for (var alias of option.alias) {
                 if (optionsObject.hasOwnProperty(alias)) {
-                    matchedOptions[alias] = optionsObject[alias]
+                    matchedOptions[option.name || alias] = optionsObject[alias]
                 }
             }
         }
@@ -205,7 +207,6 @@ export async function getParams(paramCollection?: ParamCollection) {
             currentParamListIdx++
             continue
         }
-
         // list of values
         if (param.type == ParamType.LIST) {
             paramMap[param.name] = paramList.slice(currentParamListIdx)
@@ -257,35 +258,47 @@ export async function runProgram(program: any) {
     if (!program) throw new RuntimeError('Unable to run the program')
     if (!program.config) throw new RuntimeError('Unable to run the program, program configuration missing')
 
-    // 1. Read Cli Arguments
+    // 1. Read all arguments from command lines
     readArgs()
 
-    // 1. Handle global options
+    // Show program help when no arguments are passed
+    if (!argsCount() && GlobalSettings.showHelpOnNoCommand()) {
+        return Help.program(program.config)
+    }
 
-    // 1a. Handle Global --help Option
+    // 2. Handle global options
+
+    // 2a. Handle Global --help Option
     if (GlobalSettings.enableHelpOption() && hasOption(['help', 'h'])) {
         return Help.command(program.config, getCommandName())
     }
 
-    // 1b. Handle Global --version Option
+    // 2b. Handle Global --version Option
     if (GlobalSettings.enableVersionOption() && hasOption(['version', 'ver', 'v'])) {
         return Help.version(program.config)
     }
 
-    // 2. Handle Program Options
+    // 3. Handle Program Options
     var programOptions = getOptions(program.config.options)
 
-    // checking if programOptions has properties other than '_'
-    if (Object.keys(programOptions).length > 1 && (!getCommandName() || GlobalSettings.prioritizeProgramOptions() === true)) {
+    // call 'onProgramOptions' when - 
+    // 1. programOptions are defined AND 
+    // 2. program commands are enabled AND
+    // 3. command name is empty OR program options have move priority than command options
+    // otherwise all optinos must be treated as command options and will be passed to command method
+    if (Object.keys(programOptions).length > 1 && GlobalSettings.enableCommands() && (!getCommandName() || GlobalSettings.prioritizeProgramOptions() === true)) {
         return callback(program, 'onProgramOption', await getParams(), programOptions)
     }
 
-    // 3. Handle Program Command
+    // 4. Handle Program Commands disabled mode
+    if (!GlobalSettings.enableCommands()) {
+        var programParams = await getParams(program.config.params)
 
-    // Check when no arguments are passed
-    if (!argsCount() && GlobalSettings.showHelpOnNoCommand()) {
-        return Help.program(program.config)
+        // executing main method
+        return callback(program, GlobalSettings.mainMethod(), programParams, programOptions)
     }
+
+    // 5. Handle Program Command
 
     // Get requested command
     var reqCommandName = getCommandName() || program.config.defaultCommand
@@ -358,4 +371,3 @@ export function exitProgram(program: any, exitCode: number = 0) {
     })
 
 }
-
