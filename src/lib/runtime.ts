@@ -170,8 +170,10 @@ export async function getParams(paramCollection?: ParamCollection) {
 
     // return all params if collection is not present
     // or is empty
-    if (!paramCollection || !paramCollection.length) return {
-        _: Array.from(paramList)
+    if (!paramCollection || !paramCollection.length) {
+        return {
+            _: Array.from(paramList)
+        }
     }
 
     // first param to process
@@ -292,10 +294,20 @@ export async function runProgram(program: any) {
 
     // 4. Handle Program Commands disabled mode
     if (!GlobalSettings.enableCommands()) {
-        var programParams = await getParams(program.config.params)
+        try {
+            var programParams = await getParams(program.config.params)
 
-        // executing main method
-        return callback(program, GlobalSettings.mainMethod(), programParams, programOptions)
+            // executing main method
+            return callback(program, GlobalSettings.mainMethod(), programParams, programOptions)
+        } catch (ex) {
+            // Showing command help
+            if (GlobalSettings.showHelpOnInvalidParams()) {
+                return Help.program(program.config)
+            }
+
+            // Otherwise re-throwing exception
+            throw ex
+        }
     }
 
     // 5. Handle Program Command
