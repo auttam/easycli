@@ -33,16 +33,19 @@ export class ProgramConfiguration {
                 config.binaryName = hyphenate(target.constructor.name)
             }
 
-            // collecting names of commands using command convention
-            for (var prop of Object.getOwnPropertyNames(Object.getPrototypeOf(target))) {
-                if (typeof target[prop] == 'function' && prop.endsWith('Command')
-                    && GlobalSettings.noCommandMethodList().indexOf(prop) == -1) {
+            // Check if target is not Program Class itself
+            if (target.constructor.name != "Program") {
+                // collecting names of commands using command convention
+                for (var prop of Object.getOwnPropertyNames(Object.getPrototypeOf(target))) {
+                    if (typeof target[prop] == 'function' && prop.endsWith('Command')
+                        && GlobalSettings.noCommandMethodList().indexOf(prop) == -1) {
 
-                    // creating name by removing 'Command' suffix
-                    var name = prop.substr(0, prop.lastIndexOf('Command'))
+                        // creating name by removing 'Command' suffix
+                        var name = prop.substr(0, prop.lastIndexOf('Command'))
 
-                    // adding command to command collection
-                    config.commands.add({ method: prop, name: name })
+                        // adding command to command collection
+                        config.commands.add({ method: prop, name: name })
+                    }
                 }
             }
 
