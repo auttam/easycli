@@ -362,12 +362,19 @@ export async function runCommand(program: any, reqCommandName: string) {
 
 }
 
-export function exitProgram(program: any, exitCode: number = 0) {
+/** Exits the program. If exitProcess is set, exits the process manually */
+export function exitProgram(program: any, exitCode: number = 0, exitProcess = false) {
 
     callback(program, 'onExit', exitCode).then(newExitCode => {
         process.exitCode = typeof newExitCode == 'undefined' ? exitCode : newExitCode
+        if (exitProcess) {
+            process.exit()
+        }
     }).catch(err => {
         console.error(err)
+        if (exitProcess) {
+            process.exit()
+        }
     })
 
 }
