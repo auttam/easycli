@@ -44,6 +44,9 @@ const settingStore: any = {
     // flag to show help on invalid parameter, like required param missing, wrong value for choice etc.
     showHelpOnInvalidParams: true,
 
+    // flag to show help on invalid options, currently on wrong value for choice etc.
+    showHelpOnInvalidOptions: true,
+
     // name of the default command, when no command is specified
     defaultCommandMethod: 'defaultCommand',
 
@@ -164,6 +167,16 @@ export abstract class GlobalSettings {
         }
         if (typeof enable == "boolean") {
             settingStore.showHelpOnInvalidParams = enable
+        }
+    }
+
+    /** Gets/sets flag to show help on invalid options, currently on wrong value for choice etc. */
+    static showHelpOnInvalidOptions(enable?: boolean) {
+        if (typeof enable == "undefined") {
+            return settingStore.showHelpOnInvalidOptions
+        }
+        if (typeof enable == "boolean") {
+            settingStore.showHelpOnInvalidOptions = enable
         }
     }
 

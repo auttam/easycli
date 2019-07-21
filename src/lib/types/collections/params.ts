@@ -93,7 +93,7 @@ export class ParamCollection extends Collection<IParamInfo>{
         paramInfo.required == !!paramInfo.required
 
         // initializing choices
-        paramInfo.choices = paramInfo.choices || []
+        paramInfo.choices = Array.isArray(paramInfo.choices) ? paramInfo.choices : []
 
         return paramInfo
     }

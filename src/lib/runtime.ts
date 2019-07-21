@@ -124,8 +124,18 @@ export function hasOption(searchFor?: string | string[]): boolean {
     return false
 }
 
+
+function getChoice(choices: string[], value: string, name: string): void | string {
+    // single value from choice 
+    if (choices.indexOf(value) == -1) {
+        throw new RuntimeError(`Value not allowed for ${name}`, 'allowed values are ' + choices.join(', '))
+    }
+
+    return value
+}
+
 /** Returns an object containing all the options passed from the cli that matches to the collection*/
-export function getOptions(optionCollection?: OptionCollection) {
+export async function getOptions(optionCollection?: OptionCollection) {
 
     var matchedOptions: any = {}
 
@@ -137,18 +147,33 @@ export function getOptions(optionCollection?: OptionCollection) {
     // iterating over all defined options in the collection
     for (var option of optionCollection.getItems()) {
 
+        var value = null
+
+        var name = option.name || ''
+
         // matching with option name
         if (option.name && optionsObject.hasOwnProperty(option.name)) {
-            matchedOptions[option.name] = optionsObject[option.name]
+            value = optionsObject[option.name]
         }
 
         // matching with aliases
         if (option.alias && option.alias.length) {
             for (var alias of option.alias) {
                 if (optionsObject.hasOwnProperty(alias)) {
-                    matchedOptions[option.name || alias] = optionsObject[alias]
+                    value = optionsObject[alias]
+                    name = option.name || alias
                 }
             }
+        }
+
+        // checking for choice
+        if (value && Array.isArray(option.choices)) {
+            value = getChoice(option.choices, value, name)
+        }
+
+        // assigning value
+        if (value && name) {
+            matchedOptions[name] = value
         }
     }
 
@@ -217,12 +242,18 @@ export async function getParams(paramCollection?: ParamCollection) {
         }
 
         // single value from choice 
-        if (param.type == ParamType.CHOICE) {
-            param.choices = param.choices || []
-            if (param.choices.indexOf(paramList[currentParamListIdx]) == -1) {
-                throw new RuntimeError(`Unexpected parameter value expected: ${param.choices.join(', ')}`, param.name)
-            }
-            paramMap[param.name] = paramList[currentParamListIdx]
+
+        // if (param.type == ParamType.CHOICE) {
+        //     param.choices = param.choices || []
+        //     if (param.choices.indexOf(paramList[currentParamListIdx]) == -1) {
+        //         throw new RuntimeError(`Unexpected parameter value expected: ${param.choices.join(', ')}`, param.name)
+        //     }
+        //     paramMap[param.name] = paramList[currentParamListIdx]
+        //     currentParamListIdx++
+        //     continue
+        // }
+        if (param.type == ParamType.CHOICE && Array.isArray(param.choices)) {
+            paramMap[param.name] = getChoice(param.choices, paramList[currentParamListIdx], param.name)
             currentParamListIdx++
             continue
         }
@@ -281,7 +312,21 @@ export async function runProgram(program: any) {
     }
 
     // 3. Handle Program Options
-    var programOptions = getOptions(program.config.options)
+    var programOptions = {}
+    try {
+        programOptions = await getOptions(program.config.options)
+    }
+    catch (ex) {
+        // Showing command help
+        if (GlobalSettings.showHelpOnInvalidOptions()) {
+            console.error(ex.message)
+            return Help.program(program.config)
+        }
+
+        // Otherwise re-throwing exception
+        throw ex
+    }
+
 
     // call 'onProgramOptions' when - 
     // 1. programOptions are defined AND 
@@ -327,7 +372,8 @@ export async function runProgram(program: any) {
 /** Start running a program command */
 export async function runCommand(program: any, reqCommandName: string) {
     commandIteration++
-    // handling help command
+
+    // handling global help command
     if (reqCommandName == 'help' && GlobalSettings.enableHelpCommand()) {
         return Help.program(program.config)
     }
@@ -335,7 +381,7 @@ export async function runCommand(program: any, reqCommandName: string) {
     // getting command object for requested command name
     var command = program.config.commands.getByName(reqCommandName)
 
-    // Handling invalid command
+    // Handling invalid command / command not found
     if (!command) {
         // showing help if such setting found
         if (GlobalSettings.showHelpOnNoCommand()) {
@@ -344,7 +390,7 @@ export async function runCommand(program: any, reqCommandName: string) {
 
         // otherwise if maxCommandIteration is not reached, calling onInvalidCommand 
         if (commandIteration <= maxCommandIteration) {
-            return callback(program, 'onInvalidCommand', reqCommandName, await getParams(), getOptions())
+            return callback(program, 'onInvalidCommand', reqCommandName, await getParams(), await getOptions())
         }
 
         // finally showing program help
@@ -367,7 +413,20 @@ export async function runCommand(program: any, reqCommandName: string) {
     }
 
     // Getting command options
-    var options = getOptions(program.config.options)
+    var options = {}
+    try {
+        options = await getOptions(command.options)
+    }
+    catch (ex) {
+        // Showing command help
+        if (GlobalSettings.showHelpOnInvalidOptions()) {
+            return Help.command(program.config, reqCommandName)
+        }
+
+        // Otherwise re-throwing exception
+        throw ex
+    }
+
 
     // executing command
     return callback(program, command.methodName, params, options)

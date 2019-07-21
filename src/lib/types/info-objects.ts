@@ -16,6 +16,7 @@ export interface IEntityInfo {
 export interface IOptionInfo extends IEntityInfo {
     // alias for the option
     alias?: string | string[]
+    choices?: string[]
 }
 
 /** Types of Command Params */

@@ -6,10 +6,10 @@ import { getPropertyValue } from '../../utils'
     Options are the cli arguments that starts with '--' or '-'
     
     '-' is used for single characters for example '-a'
-    '--' is used for multiple characters i.e. words example '-all'
+    '--' is used for multiple characters i.e. words example '--all'
     
     When multiple chars are used with '-' all chars are interpreted as options for example
-    '-all' as 'a', 'l', and 'l'
+    '-all' as '-a', '-l', and '-l'
 
     Any characters followed by '--' are interpreted as a single option for example
     '--abc-xyz---http:/a' as 'abc-xyz---http:/a' 
@@ -84,6 +84,9 @@ export class OptionCollection extends Collection<IOptionInfo>{
                 optionInfo.alias = optionInfo.alias.filter(item => item != optionInfo.name)
             }
         }
+
+        // initializing choices
+        optionInfo.choices = Array.isArray(optionInfo.choices) ? optionInfo.choices : []
 
         return optionInfo
     }
