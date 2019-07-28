@@ -188,7 +188,7 @@ function printParamsList(params: ParamCollection) {
     var columnCollection = []
     for (var param of params.getItems()) {
         var desc = param.description || ''
-        desc += param.required ? ' (required)' : ''
+        desc += param.required ? ' ' + BOLD + '(required)' + RESET : ''
         columnCollection.push([param.name || '', desc])
 
         if (param.type == 'choice' && param.choices) {
