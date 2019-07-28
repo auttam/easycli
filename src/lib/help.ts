@@ -11,6 +11,10 @@ const stringWidth = require('string-width')
 var defaultLeftIndent = 3
 var defaultRightIndent = 3
 
+// Color and formatting consts
+const BOLD = '\u001b[1m'
+const RESET = '\u001b[0m'
+const UNDERLINE = '\u001b[4m'
 //
 // Help Printers
 
@@ -107,7 +111,7 @@ function printColumnar(columnCollection: string[][], options: { colWidth: number
 function printProgramInfo(programInfo: IProgramInfo) {
     // Program Name
     console.log()
-    console.log(`${programInfo.name} v${programInfo.version}`)
+    console.log(`${BOLD + UNDERLINE}${programInfo.name} v${programInfo.version}${RESET}`)
 
     // Program description
     if (programInfo.description) {
@@ -119,10 +123,11 @@ function printProgramInfo(programInfo: IProgramInfo) {
 /** Prints program usage */
 function printProgramUsage(config: ProgramConfiguration) {
     console.log()
+    var label = 'Usage: ' //BOLD + UNDERLINE + 'Usage: ' + RESET
     if (GlobalSettings.enableCommands()) {
-        console.log('Usage: ' + config.binaryName + (config.hasRealCommand() ? ' <command>' : '') + (config.options.length ? ' [options ...]' : ''))
+        console.log(label + config.binaryName + (config.hasRealCommand() ? ' <command>' : '') + (config.options.length ? ' [options ...]' : ''))
     } else {
-        var usage = 'Usage: ' + config.binaryName
+        var usage = label + config.binaryName
         if (config.params.length) {
             if (config.params.length == 1) {
                 usage += ' <' + Array.from(config.params.getItems())[0].name + '>'
@@ -140,7 +145,7 @@ function printProgramUsage(config: ProgramConfiguration) {
 /** Prints command list */
 function printCommandList(config: ProgramConfiguration, commands: CommandCollection) {
     console.log()
-    console.log('Available Commands:')
+    console.log(BOLD + UNDERLINE + 'Available Commands:' + RESET)
     console.log()
 
     var columnCollection = []
@@ -158,7 +163,7 @@ function printCommandList(config: ProgramConfiguration, commands: CommandCollect
 function printOptionList(options: OptionCollection) {
     if (!options.length) return
     console.log()
-    console.log('Options:')
+    console.log(BOLD + UNDERLINE + 'Options:' + RESET)
     console.log()
 
     var columnCollection = []
@@ -178,7 +183,7 @@ function printParamsList(params: ParamCollection) {
     if (!params || !params.length) return
 
     console.log()
-    console.log('Parameters:')
+    console.log(BOLD + 'Parameters:' + RESET)
     console.log()
     var columnCollection = []
     for (var param of params.getItems()) {
