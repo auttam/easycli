@@ -258,7 +258,7 @@ function programHelp(config: ProgramConfiguration) {
     }
 
     // help command
-    if (GlobalSettings.enableHelpCommand()) {
+    if (GlobalSettings.enableHelpCommand() && GlobalSettings.enableCommands()) {
         globalHelp.push([config.binaryName + ' help', 'To view help'])
     }
 
