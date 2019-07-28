@@ -294,9 +294,20 @@ export async function runProgram(program: any) {
     // 1. Read all arguments from command lines
     readArgs()
 
-    // Show program help when no arguments are passed
-    if (!argsCount() && GlobalSettings.showHelpOnNoCommand()) {
-        return Help.program(program.config)
+    // Show program help when no arguments are passed AND any of nested condition
+    if (!argsCount()) {
+
+        // Program is running in command mode
+        // AND 'showHelpOnNoCommand' is enabled
+        if (GlobalSettings.enableCommands() && GlobalSettings.showHelpOnNoCommand()) {
+            return Help.program(program.config)
+        }
+
+        // Program is running in no-command mode
+        // AND program params doesn't contain any required param
+        if (!GlobalSettings.enableCommands() && program.config.params.containsRequired()) {
+            return Help.program(program.config)
+        }
     }
 
     // 2. Handle global options

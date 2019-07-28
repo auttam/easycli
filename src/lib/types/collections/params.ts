@@ -48,6 +48,7 @@ export class ParamCollection extends Collection<IParamInfo>{
 
     private _containsListType: boolean = false
     private _optionalParamDefined: boolean = false
+    private _requiredParamDefined: boolean = false
 
     /** Adds param to the collection */
     add(paramInfo: IParamInfo, update?: boolean) {
@@ -91,6 +92,10 @@ export class ParamCollection extends Collection<IParamInfo>{
 
         // setting required
         paramInfo.required == !!paramInfo.required
+
+        if (paramInfo.required === true) {
+            this._requiredParamDefined = true
+        }
 
         // initializing choices
         paramInfo.choices = Array.isArray(paramInfo.choices) ? paramInfo.choices : []
@@ -160,6 +165,10 @@ export class ParamCollection extends Collection<IParamInfo>{
 
         // adding params iteratively 
         paramList.forEach(paramInfo => this.merge(paramInfo))
+    }
 
+    /** Return true if there is any required parameter in the list */
+    public containsRequired(){
+        return this._requiredParamDefined
     }
 }
