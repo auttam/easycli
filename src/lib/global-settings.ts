@@ -29,8 +29,8 @@ const settingStore: any = {
     //
     // Command mode related
 
-    // flgag to enable/disable program commands
-    programCommandsEnabled: true,
+    // flag to enable/disable program commands
+    programCommandsEnabled: false,
 
     // flag to enable/disabled default help command
     helpCommandEnabled: true,
