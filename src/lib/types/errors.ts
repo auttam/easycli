@@ -1,8 +1,17 @@
+import { EOL } from 'os'
+
 /** Represents Runtime error that is thrown while CLI program is running */
 export class RuntimeError extends Error {
-    public dateTime: Date
+    private details: any
+
     constructor(...params: any) {
-        super(params)
+        var details = params[1]
+        if (details) {
+            params.splice(1, 1)
+        }
+        super(...params)
+
+        this.details = details
 
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         if (Error.captureStackTrace) {
@@ -10,15 +19,19 @@ export class RuntimeError extends Error {
         }
 
         this.name = 'RuntimeError'
-        this.dateTime = new Date()
     }
 }
 
 /** Represents Configuration error that is thrown during program configuration */
 export class ConfigurationError extends Error {
-    public dateTime: Date
+    private details: any
     constructor(...params: any) {
-        super(params)
+        var details = params[1]
+        if (details) {
+            params.splice(1, 1)
+            params[0] += EOL + JSON.stringify(details, null, 4)
+        }
+        super(...params)
 
         // Maintains proper stack trace for where our error was thrown (only available on V8)
         if (Error.captureStackTrace) {
@@ -26,6 +39,5 @@ export class ConfigurationError extends Error {
         }
 
         this.name = 'ConfigurationError'
-        this.dateTime = new Date()
     }
 }
