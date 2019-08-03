@@ -123,6 +123,11 @@ export class ParamCollection extends Collection<IParamInfo>{
         if (this._optionalParamDefined && paramInfo.required) {
             throw new ConfigurationError('Required Parameter cannot be defined after optional parameter(s).', paramInfo)
         }
+
+        // Rule 5. Default value must be one of the choicess
+        if (paramInfo.value && paramInfo.choices && paramInfo.choices.indexOf(paramInfo.value) == -1) {
+            throw new ConfigurationError('Default value is not found in the specified list of choices', paramInfo)
+        }
     }
 
     protected finalizeItem(paramInfo: IParamInfo) {
@@ -168,7 +173,7 @@ export class ParamCollection extends Collection<IParamInfo>{
     }
 
     /** Return true if there is any required parameter in the list */
-    public containsRequired(){
+    public containsRequired() {
         return this._requiredParamDefined
     }
 }
