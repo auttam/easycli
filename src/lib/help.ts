@@ -171,7 +171,8 @@ function printOptionList(options: OptionCollection) {
         var optionInfo = '--' + option.name
         columnCollection.push(['--' + option.name, option.description || ''])
         if (option.alias && Array.isArray(option.alias)) {
-            columnCollection.push(['', 'Aliases: ' + option.alias.join(', ')])
+            var aliasList = option.alias.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
+            columnCollection.push(['', 'Alias: ' + aliasList])
         }
     }
     // printing command list
