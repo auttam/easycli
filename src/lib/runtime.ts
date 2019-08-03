@@ -167,7 +167,7 @@ export async function getOptions(optionCollection?: OptionCollection) {
         }
 
         // checking for choice
-        if (value && Array.isArray(option.choices)) {
+        if (value && Array.isArray(option.choices) && option.choices.length) {
             value = getChoice(option.choices, value, name)
         }
 
@@ -242,17 +242,7 @@ export async function getParams(paramCollection?: ParamCollection) {
         }
 
         // single value from choice 
-
-        // if (param.type == ParamType.CHOICE) {
-        //     param.choices = param.choices || []
-        //     if (param.choices.indexOf(paramList[currentParamListIdx]) == -1) {
-        //         throw new RuntimeError(`Unexpected parameter value expected: ${param.choices.join(', ')}`, param.name)
-        //     }
-        //     paramMap[param.name] = paramList[currentParamListIdx]
-        //     currentParamListIdx++
-        //     continue
-        // }
-        if (param.type == ParamType.CHOICE && Array.isArray(param.choices)) {
+       if (param.type == ParamType.CHOICE && Array.isArray(param.choices) && param.choices.length) {
             paramMap[param.name] = getChoice(param.choices, paramList[currentParamListIdx], param.name)
             currentParamListIdx++
             continue
