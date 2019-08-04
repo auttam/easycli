@@ -6,35 +6,54 @@ import { ParamType } from './types/info-objects'
 import { GlobalSettings } from './global-settings'
 import * as Help from './help'
 
-// flag: set when 'read' is performed 
+// flag: sets when 'read' is performed 
 var isReadingDone = false
 
-/** List of all arguments read from cli */
-var retrievedArgs = []
-
-/** Arguments as parsed by minimist */
-var parsedArgs: any = {}
-
-/** Command Name */
-var commandName = ''
-
-/** Params List */
-var paramList: []
-
-/** Options */
-var optionsObject: any = {}
-
-/** flag: set when unhandled rejection handler is attached to the process event */
+/** flag: sets when unhandled rejection handler is attached to the process event */
 var rejectionHandlerAttached = false
 
-/** flag: set when a program is running  */
+/** flag: sets when a program is running  */
 var programRunning = false
+
+/** All arguments supplied to the program */
+var suppliedArgs = []
+
+/** Object containing arguments parsed by minimist */
+var parsedArgs: any = {}
+
+/** Object containing all supplied arguments categorized into command name, params and options for the program */
+const programArgs: { commandName: string, params: string[], options: any, [propName: string]: any } = {
+    commandName: '',
+    params: [],
+    options: {},
+    /** Checks whether any option supplied to the program */
+    getOptionNames: function () {
+        return !!Object.keys(this.options).length
+    },
+
+    /** Checks whether program arguments contain specific option(s) */
+    containsOption: function (name: string | string[]) {
+        if (!name) return false
+        if (!Array.isArray(name)) {
+            name = [name]
+        }
+
+        // return if programArgs.options has any options from optionName List 
+        for (var item of name) {
+            if (typeof item == 'string' && this.options.hasOwnProperty(item)) return true
+        }
+
+        // options not present
+        return false
+    }
+}
+Object.seal(programArgs)
 
 /** Current iteration for runCommand method */
 var commandIteration = 0
 var maxCommandIteration = 2
 
-/** initialize runtime */
+/** Initializes runtime */
 export function init() {
 
     // re-setting runCommand() iteration counter
@@ -58,72 +77,38 @@ export function init() {
 
 }
 
-/** Reads arguments from command line and parses them into command name, params and options */
+/** Reads arguments supplied to the program from command line and parses them into program arguments */
 export function readArgs() {
 
     // no need to proceed if reading is already done
     if (isReadingDone) return
 
     // reading raw arguments
-    retrievedArgs = process.argv.slice(GlobalSettings.processArgvStartIndex())
+    suppliedArgs = process.argv.slice(GlobalSettings.processArgvStartIndex())
 
     // parsing raw arguments into minimist's parsed object
     if (GlobalSettings.minimistOptionsObject()) {
-        parsedArgs = minimist(retrievedArgs, GlobalSettings.minimistOptionsObject())
+        parsedArgs = minimist(suppliedArgs, GlobalSettings.minimistOptionsObject())
     } else {
-        parsedArgs = minimist(retrievedArgs)
+        parsedArgs = minimist(suppliedArgs)
     }
 
-    // Getting command name from cli arguments
+    // setting first cli argument as command name
     if (GlobalSettings.enableCommands()) {
-        commandName = parsedArgs._ && parsedArgs._.length ? parsedArgs._[0] : ''
+        programArgs.commandName = parsedArgs._ && parsedArgs._.length ? parsedArgs._[0] : ''
         parsedArgs._.shift()
     }
 
-    // Getting Params
-    paramList = parsedArgs._ || []
+    // setting all supplied non-option arguments as program params
+    programArgs.params = parsedArgs._ || []
 
-    // Getting options
+    // setting all supplied options as program options 
     delete parsedArgs._
-    optionsObject = parsedArgs
+    programArgs.options = parsedArgs
 
-    // set flag that cli arguments have been read 
+    // setting flag that cli arguments have been read 
     isReadingDone = true
 }
-
-/** Gets count of the raw arguments passed to the command line */
-export function argsCount() {
-    return retrievedArgs.length
-}
-
-/** Gets the command name passed to the cli */
-export function getCommandName() {
-    return commandName
-}
-
-/** Gets whether any option set from the command line  */
-export function hasOption(searchFor?: string | string[]): boolean {
-    searchFor = searchFor || ''
-    // return false if optionsObject is not set or null
-    if (!optionsObject) return false
-
-    // return if any option is set
-    if (!searchFor) return !!Object.keys(optionsObject).length
-
-    // return if optionsObject has searchFor
-    if (searchFor && typeof searchFor == 'string') return optionsObject.hasOwnProperty(searchFor)
-
-    // return if optionsObject has any options from searchFor List 
-    if (searchFor && Array.isArray(searchFor)) {
-        for (var item of searchFor) {
-            if (typeof item == 'string' && optionsObject.hasOwnProperty(item)) return true
-        }
-    }
-
-    // options not present
-    return false
-}
-
 
 function getChoice(choices: string[], value: string, name: string): void | string {
     // single value from choice 
@@ -134,77 +119,68 @@ function getChoice(choices: string[], value: string, name: string): void | strin
     return value
 }
 
-/** Returns an object containing all the options passed from the cli that matches to the collection*/
-export async function getOptions(optionCollection?: OptionCollection) {
+/** Creates a map for all defined options that are supplied to the program */
+async function createOptionsMap(definedOptions?: OptionCollection) {
 
-    var matchedOptions: any = {}
+    var mappedOptions: any = {}
 
-    // return all options if collection is not specified
-    if (!optionCollection) return {
-        _: Object.assign({}, optionsObject)
-    }
+    // assign all options to default '_' property
+    mappedOptions._ = Object.assign({}, programArgs.options)
+
+    // no need to proceed if definitions are missing
+    if (!definedOptions) return mappedOptions
 
     // iterating over all defined options in the collection
-    for (var option of optionCollection.getItems()) {
+    for (var optionInfo of definedOptions.getItems()) {
 
         var value = null
+        var name = optionInfo.name || ''
 
-        var name = option.name || ''
-
-        // matching with option name
-        if (option.name && optionsObject.hasOwnProperty(option.name)) {
-            value = optionsObject[option.name]
+        // matching defined option name with the supplied options
+        if (optionInfo.name && programArgs.options.hasOwnProperty(optionInfo.name)) {
+            value = programArgs.options[optionInfo.name]
         }
 
-        // matching with aliases
-        if (option.alias && option.alias.length) {
-            for (var alias of option.alias) {
-                if (optionsObject.hasOwnProperty(alias)) {
-                    value = optionsObject[alias]
-                    name = option.name || alias
+        // matching defined option aliases with the supplied options
+        if (optionInfo.alias && optionInfo.alias.length) {
+            for (var alias of optionInfo.alias) {
+                if (programArgs.options.hasOwnProperty(alias)) {
+                    value = programArgs.options[alias]
+                    name = optionInfo.name || alias
                 }
             }
         }
 
-        // checking for choice
-        if (value && Array.isArray(option.choices) && option.choices.length) {
-            value = getChoice(option.choices, value, name)
+        // validating supplied value of the option with the pre-defined set of values
+        if (value && Array.isArray(optionInfo.choices) && optionInfo.choices.length) {
+            value = getChoice(optionInfo.choices, value, name)
         }
 
-        // assigning value
+        // adding option to the map object
         if (value && name) {
-            matchedOptions[name] = value
+            mappedOptions[name] = value
         }
     }
-
-    // adding remaining options
-    matchedOptions._ = {}
-    for (var prop of Object.keys(optionsObject)) {
-        if (!matchedOptions.hasOwnProperty(prop)) {
-            matchedOptions._[prop] = optionsObject[prop]
-        }
-    }
-    return matchedOptions
-
+    return mappedOptions
 }
 
-/** Returns an object containing parameters passed from the cli that matches to the collection */
-export async function getParams(paramCollection?: ParamCollection) {
-    // object containing parameters mapped to passed cli argument
-    var paramMap: any = {}
+/** Creates a map for all defined params that are supplied to the program */
+async function createParamsMap(definedParams?: ParamCollection) {
+    // object containing parameters mapped to supplied argument
+    var mappedParams: any = {}
 
-    // return all params if collection is not present
-    // or is empty
-    if (!paramCollection || !paramCollection.length) {
-        return {
-            _: Array.from(paramList)
-        }
+    // assign all options to default '_' property
+    mappedParams._ = Array.from(programArgs.params)
+
+    // no need to proceed if definition is not available
+    if (!definedParams || !definedParams.length) {
+        return mappedParams
     }
 
     // first param to process
     var currentParamListIdx = 0
 
-    for (var param of paramCollection.getItems()) {
+    for (var param of definedParams.getItems()) {
 
         // param name cannot be blank
         // following check is for bypass typescript type check
@@ -212,10 +188,10 @@ export async function getParams(paramCollection?: ParamCollection) {
 
         // Setting default value to the optional parameter
         // when no parameter is passed to the cli
-        if (!paramList.length) {
+        if (!programArgs.params.length) {
             // Set value to required param only if default value is defined 
             if (!param.required || typeof param.value != 'undefined') {
-                paramMap[param.name] = param.value || ''
+                mappedParams[param.name] = param.value || ''
                 continue
             }
         }
@@ -224,34 +200,34 @@ export async function getParams(paramCollection?: ParamCollection) {
 
         // Required param check
         // Throw error if required parameter is missing and doesn't have default value
-        if (param.required && !paramList[currentParamListIdx] && typeof param.value == 'undefined') {
+        if (param.required && !programArgs.params[currentParamListIdx] && typeof param.value == 'undefined') {
             throw new RuntimeError('Required parameter missing', param.name)
         }
 
         // single value
         if (param.type == ParamType.SINGLE) {
-            paramMap[param.name] = paramList[currentParamListIdx]
+            mappedParams[param.name] = programArgs.params[currentParamListIdx]
             currentParamListIdx++
             continue
         }
         // list of values
         if (param.type == ParamType.LIST) {
-            paramMap[param.name] = paramList.slice(currentParamListIdx)
-            currentParamListIdx = paramList.length
+            mappedParams[param.name] = programArgs.params.slice(currentParamListIdx)
+            currentParamListIdx = programArgs.params.length
             continue
         }
 
         // single value from choice 
-       if (param.type == ParamType.CHOICE && Array.isArray(param.choices) && param.choices.length) {
-            paramMap[param.name] = getChoice(param.choices, paramList[currentParamListIdx], param.name)
+        if (param.type == ParamType.CHOICE && Array.isArray(param.choices) && param.choices.length) {
+            mappedParams[param.name] = getChoice(param.choices, programArgs.params[currentParamListIdx], param.name)
             currentParamListIdx++
             continue
         }
     }
-    return paramMap
+    return mappedParams
 }
 
-/** Attaches event handler to process events */
+/** Attaches event handler once to process' unhandled rejection event */
 export function handleRejections(handler: any) {
     if (handler && typeof handler == 'function' && !rejectionHandlerAttached) {
         process.on('unhandledRejection', handler)
@@ -260,7 +236,7 @@ export function handleRejections(handler: any) {
 }
 
 /** Calls a method of a program if exists */
-export async function callback(program: any, methodName: string, ...details: any[]) {
+async function callback(program: any, methodName: string, ...details: any[]) {
     if (program && program[methodName] && typeof program[methodName] == 'function') {
         return program[methodName].apply(program, details)
     }
@@ -271,21 +247,21 @@ export function running() {
     return programRunning
 }
 
-/** Start running a program */
+/** Starts a program */
 export async function runProgram(program: any) {
 
-    // setting program running state 
+    // set program running state 
     programRunning = true
 
-    // check for program object
+    // validate program object
     if (!program) throw new RuntimeError('Unable to run the program')
     if (!program.config) throw new RuntimeError('Unable to run the program, program configuration missing')
 
-    // 1. Read all arguments from command lines
+    // 1. Read all arguments supplied to the program
     readArgs()
 
-    // Show program help when no arguments are passed AND any of nested condition
-    if (!argsCount()) {
+    // Show program help when no arguments are passed AND when any of nested condition is true
+    if (!suppliedArgs.length) {
 
         // Program is running in command mode
         // AND 'showHelpOnNoCommand' is enabled
@@ -302,23 +278,26 @@ export async function runProgram(program: any) {
 
     // 2. Handle global options
 
-    // 2a. Handle Global --help Option
-    if (GlobalSettings.enableHelpOption() && hasOption(['help', 'h'])) {
-        return Help.command(program.config, getCommandName())
+    // 2a. Show program or command help when --help option is supplied
+    if (GlobalSettings.enableHelpOption() && programArgs.containsOption(['help', 'h'])) {
+        return Help.command(program.config, programArgs.commandName)
     }
 
-    // 2b. Handle Global --version Option
-    if (GlobalSettings.enableVersionOption() && hasOption(['version', 'ver', 'v'])) {
+    // 2b. Show program version when --version option is supplied
+    if (GlobalSettings.enableVersionOption() && programArgs.containsOption(['version', 'ver', 'v'])) {
         return Help.version(program.config)
     }
 
     // 3. Handle Program Options
+
+    // 3a. create program options map
     var programOptions = {}
     try {
-        programOptions = await getOptions(program.config.options)
+        programOptions = await createOptionsMap(program.config.options)
     }
     catch (ex) {
-        // Showing command help
+        // Show program help when there is a runtime error reading program options AND
+        // global setting showHelpOnInvalidOptions is set
         if (GlobalSettings.showHelpOnInvalidOptions()) {
             console.error(ex.message)
             return Help.program(program.config)
@@ -328,24 +307,25 @@ export async function runProgram(program: any) {
         throw ex
     }
 
-
-    // call 'onProgramOptions' when - 
+    // 3b. call 'onProgramOptions' when - 
     // 1. programOptions are defined AND 
     // 2. program commands are enabled AND
-    // 3. command name is empty OR program options have move priority than command options
-    // otherwise all optinos must be treated as command options and will be passed to command method
-    if (Object.keys(programOptions).length > 1 && GlobalSettings.enableCommands() && (!getCommandName() || GlobalSettings.prioritizeProgramOptions() === true)) {
-        return callback(program, 'onProgramOption', await getParams(), programOptions)
+    // 3. command name is empty OR program options have more priority than command options
+    if (Object.keys(programOptions).length > 1 && GlobalSettings.enableCommands() && (!programArgs.commandName || GlobalSettings.prioritizeProgramOptions() === true)) {
+        return callback(program, 'onProgramOption', await createParamsMap(), programOptions)
     }
+    // 3c. otherwise treat all options as command options and pass to command method
 
-    // 4. Handle Program Commands disabled mode
+    // 4. Handle Program's no-Command mode
     if (!GlobalSettings.enableCommands()) {
         try {
-            var programParams = await getParams(program.config.params)
+            // 4a. create param map for program
+            var programParams = await createParamsMap(program.config.params)
 
-            // executing main method
+            // 4b. call program's main method
             return callback(program, GlobalSettings.mainMethod(), programParams, programOptions)
         } catch (ex) {
+
             // Showing command help
             if (GlobalSettings.showHelpOnInvalidParams()) {
                 return Help.program(program.config)
@@ -356,55 +336,57 @@ export async function runProgram(program: any) {
         }
     }
 
-    // 5. Handle Program Command
+    // 5. Handle Program's Command mode
 
     // Get requested command
-    var reqCommandName = getCommandName() || program.config.defaultCommand
+    var reqCommandName = programArgs.commandName || program.config.defaultCommand
 
-    // Check when command or even default command is missing, 
+    // Show help if requested command name is missing 
     if (!reqCommandName && GlobalSettings.showHelpOnNoCommand()) {
         return Help.program(program.config)
     }
 
-    // run command
+    // otherwise run command
     return runCommand(program, reqCommandName)
 }
 
-/** Start running a program command */
+/** Runs a program command */
 export async function runCommand(program: any, reqCommandName: string) {
     commandIteration++
 
-    // handling global help command
+    // Show command help when command name is 'help'
     if (reqCommandName == 'help' && GlobalSettings.enableHelpCommand()) {
         return Help.program(program.config)
     }
 
-    // getting command object for requested command name
+    // Get command definition object for the requested command name
     var command = program.config.commands.getByName(reqCommandName)
 
-    // Handling invalid command / command not found
+    // Handle invalid command / command not found
     if (!command) {
-        // showing help if such setting found
+        // show help if enabled
         if (GlobalSettings.showHelpOnNoCommand()) {
             return Help.program(program.config)
         }
 
-        // otherwise if maxCommandIteration is not reached, calling onInvalidCommand 
+        // otherwise if maxCommandIteration is not reached, call onInvalidCommand methods
         if (commandIteration <= maxCommandIteration) {
-            return callback(program, 'onInvalidCommand', reqCommandName, await getParams(), await getOptions())
+            return callback(program, 'onInvalidCommand', reqCommandName, await createParamsMap(), await createOptionsMap())
         }
 
-        // finally showing program help
+        // finally show program help
         return Help.program(program.config)
     }
 
-    // Getting command params
+    // otherwise, proceed further to execute the command
+
+    // create command params map object
     var params: any = {}
     try {
-        params = await getParams(command.params)
+        params = await createParamsMap(command.params)
     }
     catch (ex) {
-        // Showing command help
+        // show help if enabled
         if (GlobalSettings.showHelpOnInvalidParams()) {
             return Help.command(program.config, reqCommandName)
         }
@@ -413,13 +395,13 @@ export async function runCommand(program: any, reqCommandName: string) {
         throw ex
     }
 
-    // Getting command options
+    // create command options map object
     var options = {}
     try {
-        options = await getOptions(command.options)
+        options = await createOptionsMap(command.options)
     }
     catch (ex) {
-        // Showing command help
+        // Show command help if enabled
         if (GlobalSettings.showHelpOnInvalidOptions()) {
             return Help.command(program.config, reqCommandName)
         }
@@ -428,8 +410,7 @@ export async function runCommand(program: any, reqCommandName: string) {
         throw ex
     }
 
-
-    // executing command
+    // finally execute the command
     return callback(program, command.methodName, params, options)
 
 }
