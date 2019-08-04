@@ -36,7 +36,7 @@ import { getPropertyValue } from '../../utils'
  */
 export class OptionCollection extends Collection<IOptionInfo>{
 
-    // list of all names and aliases
+    // list of all main names and other names
     private _definedNames: string[] = []
 
     public add(optionInfo: IOptionInfo, update?: boolean) {
@@ -72,21 +72,21 @@ export class OptionCollection extends Collection<IOptionInfo>{
         // adding default description
         optionInfo.description = optionInfo.description || 'No Description'
 
-        // converting alias into an array
-        if (optionInfo.alias) {
-            optionInfo.alias = !Array.isArray(optionInfo.alias) ? [optionInfo.alias] : optionInfo.alias
+        // converting otherNames into an array
+        if (optionInfo.otherNames) {
+            optionInfo.otherNames = !Array.isArray(optionInfo.otherNames) ? [optionInfo.otherNames] : optionInfo.otherNames
 
-            // Rule 1. Aliased must not have duplicate values
-            optionInfo.alias = optionInfo.alias.filter((value, index, self) => self.indexOf(value) === index)
+            // Rule 1. Other Names must not have duplicate values
+            optionInfo.otherNames = optionInfo.otherNames.filter((value, index, self) => self.indexOf(value) === index)
 
-            // Rule 2. Aliases must not match with the option name, if so remove that alias
-            if (optionInfo.alias.indexOf(optionInfo.name) > -1) {
-                optionInfo.alias = optionInfo.alias.filter(item => item != optionInfo.name)
+            // Rule 2. Other Names must not match with the main option name, if so remove that 'other name'
+            if (optionInfo.otherNames.indexOf(optionInfo.name) > -1) {
+                optionInfo.otherNames = optionInfo.otherNames.filter(item => item != optionInfo.name)
             }
         }
 
-        // initializing choices
-        optionInfo.choices = Array.isArray(optionInfo.choices) ? optionInfo.choices : []
+        // initializing allowed values
+        optionInfo.allowedValues = Array.isArray(optionInfo.allowedValues) ? optionInfo.allowedValues : []
 
         return optionInfo
     }
@@ -96,15 +96,15 @@ export class OptionCollection extends Collection<IOptionInfo>{
         // Rule 1. Option must have a name
         // Name validation done by base class, by this point optionInfo will have a name
 
-        // Adding alias
-        if (Array.isArray(optionInfo.alias) && optionInfo.alias.length) {
+        // Adding Other Names
+        if (Array.isArray(optionInfo.otherNames) && optionInfo.otherNames.length) {
 
-            // Rule 2. Aliases must not match with existing options names or their aliases
-            var matched = optionInfo.alias.some(name => {
+            // Rule 2. Names in 'Other Names' must not match with existing options names or their other names
+            var matched = optionInfo.otherNames.some(name => {
                 return this._definedNames.indexOf(name) > -1
             })
             if (matched) {
-                throw new ConfigurationError('Unable to add option, option has an alias that is already used', optionInfo.alias)
+                throw new ConfigurationError('Unable to add option, option has a name that is already used', optionInfo)
             }
         }
 
@@ -118,8 +118,8 @@ export class OptionCollection extends Collection<IOptionInfo>{
         }
 
         // updating list of existing option names
-        if (optionInfo.alias) {
-            this._definedNames = this._definedNames.concat(optionInfo.alias)
+        if (optionInfo.otherNames) {
+            this._definedNames = this._definedNames.concat(optionInfo.otherNames)
         }
     }
 
@@ -130,7 +130,7 @@ export class OptionCollection extends Collection<IOptionInfo>{
 
         // merging and updating option if already exists 
         if (option) {
-            option.alias = getPropertyValue(optionInfo, 'alias', option.alias)
+            option.otherNames = getPropertyValue(optionInfo, 'otherNames', option.otherNames)
             option.description = getPropertyValue(optionInfo, 'description', option.description)
             this.add(option, true)
         }

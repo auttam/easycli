@@ -36,7 +36,7 @@ export class ProgramConfiguration {
             }
 
             // Check if target is not Program Class itself
-            if (target.constructor.name != "Program") {
+            if (target.constructor.name != 'Program') {
                 // collecting names of commands using command convention
                 for (var prop of Object.getOwnPropertyNames(Object.getPrototypeOf(target))) {
                     if (typeof target[prop] == 'function' && prop.endsWith('Command')

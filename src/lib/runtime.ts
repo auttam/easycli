@@ -110,12 +110,50 @@ export function readArgs() {
     isReadingDone = true
 }
 
-function getChoice(choices: string[], value: string, name: string): void | string {
-    // single value from choice 
-    if (choices.indexOf(value) == -1) {
-        throw new RuntimeError(`Value not allowed for ${name}`, 'allowed values are ' + choices.join(', '))
+function getAllowedValue(value: string | string[], infoObject?: any): void | string | string[] {
+    if (!value || !infoObject) return value
+
+    // Get only allowed values when the info object contains a list of allowed value -->
+    if (infoObject.allowedValues && Array.isArray(infoObject.allowedValues)) {
+
+        // prepare a list to allowed values for case-insensitive search
+        var allowedValues = infoObject.allowedValues.map((value: string) => value.toLowerCase())
+
+        var matchedValue
+
+        // get list of matched values from the allowed list when the value is an array
+        if (Array.isArray(value) && value.length) {
+            matchedValue = []
+            for (var eachValue of value) {
+                var idx = allowedValues.indexOf(eachValue.toLowerCase())
+                if (idx > -1) {
+                    matchedValue.push(infoObject.allowedValues[idx])
+                }
+            }
+        }
+
+        // get single matched value from the allowed list when value is a string 
+        if (!Array.isArray(value)) {
+            var idx = allowedValues.indexOf(value.toLowerCase())
+            if (idx > -1) {
+                matchedValue = infoObject.allowedValues[idx]
+            }
+        }
+
+        // if no value is matched, set a default value as matched 
+        if (!matchedValue && typeof infoObject.value != 'undefined') {
+            matchedValue = infoObject.value
+        }
+
+        // throw run time exception if there is still no matched value at this point
+        if (!matchedValue) {
+            throw new RuntimeError(`Value not allowed for ${infoObject.name} ${(infoObject.type ? ' parameter' : ' option')} allowed values are ' ${infoObject.allowedValues.join(', ')}`)
+        }
+
+        return matchedValue
     }
 
+    // otherwise return value as is ->
     return value
 }
 
@@ -141,20 +179,18 @@ async function createOptionsMap(definedOptions?: OptionCollection) {
             value = programArgs.options[optionInfo.name]
         }
 
-        // matching defined option aliases with the supplied options
-        if (optionInfo.alias && optionInfo.alias.length) {
-            for (var alias of optionInfo.alias) {
-                if (programArgs.options.hasOwnProperty(alias)) {
-                    value = programArgs.options[alias]
-                    name = optionInfo.name || alias
+        // matching option's other names with the supplied options
+        if (optionInfo.otherNames && optionInfo.otherNames.length) {
+            for (var otherNames of optionInfo.otherNames) {
+                if (programArgs.options.hasOwnProperty(otherNames)) {
+                    value = programArgs.options[otherNames]
+                    name = optionInfo.name || otherNames
                 }
             }
         }
 
         // validating supplied value of the option with the pre-defined set of values
-        if (value && Array.isArray(optionInfo.choices) && optionInfo.choices.length) {
-            value = getChoice(optionInfo.choices, value, name)
-        }
+        value = getAllowedValue(value, optionInfo)
 
         // adding option to the map object
         if (value && name) {
@@ -180,49 +216,45 @@ async function createParamsMap(definedParams?: ParamCollection) {
     // first param to process
     var currentParamListIdx = 0
 
-    for (var param of definedParams.getItems()) {
+    for (var paramInfo of definedParams.getItems()) {
 
         // param name cannot be blank
         // following check is for bypass typescript type check
-        if (!param.name) return
+        if (!paramInfo.name) return
 
-        // Setting default value to the optional parameter
-        // when no parameter is passed to the cli
+        // When no parameter is supplied to the program ->
         if (!programArgs.params.length) {
-            // Set value to required param only if default value is defined 
-            if (!param.required || typeof param.value != 'undefined') {
-                mappedParams[param.name] = param.value || ''
-                continue
+            // Validation 1: Parameter configuration must have default value when no param is passed from cli
+            if (paramInfo.required && typeof paramInfo.value == 'undefined') {
+                throw new RuntimeError('Required parameter missing', paramInfo.name)
             }
-        }
-
-        // otherwise ->
-
-        // Required param check
-        // Throw error if required parameter is missing and doesn't have default value
-        if (param.required && !programArgs.params[currentParamListIdx] && typeof param.value == 'undefined') {
-            throw new RuntimeError('Required parameter missing', param.name)
-        }
-
-        // single value
-        if (param.type == ParamType.SINGLE) {
-            mappedParams[param.name] = programArgs.params[currentParamListIdx]
-            currentParamListIdx++
             continue
         }
-        // list of values
-        if (param.type == ParamType.LIST) {
-            mappedParams[param.name] = programArgs.params.slice(currentParamListIdx)
+
+        // when parameters are supplied ->
+
+        // Set default value if present
+        mappedParams[paramInfo.name] = paramInfo.value || ''
+
+        // get single value
+        if (paramInfo.type == ParamType.SINGLE) {
+            mappedParams[paramInfo.name] = programArgs.params[currentParamListIdx]
+            currentParamListIdx++
+        }
+
+        // get list of values
+        if (paramInfo.type == ParamType.LIST) {
+            mappedParams[paramInfo.name] = programArgs.params.slice(currentParamListIdx)
             currentParamListIdx = programArgs.params.length
-            continue
         }
 
-        // single value from choice 
-        if (param.type == ParamType.CHOICE && Array.isArray(param.choices) && param.choices.length) {
-            mappedParams[param.name] = getChoice(param.choices, programArgs.params[currentParamListIdx], param.name)
-            currentParamListIdx++
-            continue
+        // Validation 1: Parameter must have value when param is required
+        if (paramInfo.required && !mappedParams[paramInfo.name]) {
+            throw new RuntimeError('Required parameter missing', paramInfo.name)
         }
+
+        // getting allowed value
+        mappedParams[paramInfo.name] = getAllowedValue(programArgs.params[currentParamListIdx], paramInfo)
     }
     return mappedParams
 }

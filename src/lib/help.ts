@@ -170,9 +170,9 @@ function printOptionList(options: OptionCollection) {
     for (var option of options.getItems()) {
         var optionInfo = '--' + option.name
         columnCollection.push(['--' + option.name, option.description || ''])
-        if (option.alias && Array.isArray(option.alias)) {
-            var aliasList = option.alias.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
-            columnCollection.push(['', 'Alias: ' + aliasList])
+        if (option.otherNames && Array.isArray(option.otherNames)) {
+            var otherNames = option.otherNames.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
+            columnCollection.push(['', 'Other Names: ' + otherNames])
         }
     }
     // printing command list
@@ -192,8 +192,8 @@ function printParamsList(params: ParamCollection) {
         desc += param.required ? ' ' + BOLD + '(required)' + RESET : ''
         columnCollection.push([param.name || '', desc])
 
-        if (param.type == 'choice' && param.choices) {
-            columnCollection.push(['', 'Possible Values: ' + param.choices.join(', ')])
+        if (param.allowedValues && param.allowedValues.length) {
+            columnCollection.push(['', 'Possible Values: ' + param.allowedValues.join(', ')])
         }
 
     }

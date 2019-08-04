@@ -14,7 +14,8 @@ import { hyphenate, camelCase, getPropertyValue } from '../../utils'
 
     Types of parameters
     
-    There are 3 types of parameters named - (1) single, (2) list, and (3) choice parameter.
+    There are 2 types of parameters named - (1) single, (2) list
+    Both type of parameter can be configured to allow values from pre-defined list.
 
     A command may have a combination of any types of parameters. Following are some rules -
         1. There can be only one list type parameter
@@ -97,8 +98,8 @@ export class ParamCollection extends Collection<IParamInfo>{
             this._requiredParamDefined = true
         }
 
-        // initializing choices
-        paramInfo.choices = Array.isArray(paramInfo.choices) ? paramInfo.choices : []
+        // initializing allowed values
+        paramInfo.allowedValues = Array.isArray(paramInfo.allowedValues) ? paramInfo.allowedValues : []
 
         return paramInfo
     }
@@ -124,9 +125,9 @@ export class ParamCollection extends Collection<IParamInfo>{
             throw new ConfigurationError('Required Parameter cannot be defined after optional parameter(s).', paramInfo)
         }
 
-        // Rule 5. Default value must be one of the choicess
-        if (paramInfo.value && paramInfo.choices && paramInfo.choices.indexOf(paramInfo.value) == -1) {
-            throw new ConfigurationError('Default value is not found in the specified list of choices', paramInfo)
+        // Rule 5. Default value must be one of the allowed values
+        if (paramInfo.value && paramInfo.allowedValues && paramInfo.allowedValues.indexOf(paramInfo.value) == -1) {
+            throw new ConfigurationError('Default value is not found in the allowed values', paramInfo)
         }
     }
 
@@ -147,7 +148,7 @@ export class ParamCollection extends Collection<IParamInfo>{
 
         // merging and updating param if already exists 
         if (param) {
-            param.choices = getPropertyValue(paramInfo, 'choices', param.choices)
+            param.allowedValues = getPropertyValue(paramInfo, 'allowedValues', param.allowedValues)
             param.description = getPropertyValue(paramInfo, 'description', param.description)
             param.required = getPropertyValue(paramInfo, 'required', param.required)
             param.type = getPropertyValue(paramInfo, 'type', param.type)

@@ -14,24 +14,23 @@ export interface IEntityInfo {
 
 /** Shape of the Option Information Object */
 export interface IOptionInfo extends IEntityInfo {
-    // alias for the option
-    alias?: string | string[]
-    choices?: string[]
+    // other names for the option
+    otherNames?: string | string[]
+    allowedValues?: string[]
 }
 
 /** Types of Command Params */
 export enum ParamType {
-    SINGLE = 'value', // accepts single value (default)
-    LIST = 'list', // accepts list of values for command Param
-    CHOICE = 'choice'
+    SINGLE = 'single', // accepts single value (default)
+    LIST = 'list' // accepts list of values for command Param
 }
 
 /** Shape of the Param Information Object */
 export interface IParamInfo extends IEntityInfo {
-    type?: ParamType // whether to accept single or a list of values, default should single
-    choices?: string[]
+    type?: ParamType // whether to accept single or a list of values, default should singles
     required?: boolean // default should be false
-    value?: any // value to be used if not passed from cli
+    value?: string // value to be used if not passed from cli
+    allowedValues?: string[]
 }
 
 /** Shape of the Command Information Object */

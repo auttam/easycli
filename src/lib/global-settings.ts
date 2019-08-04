@@ -41,10 +41,10 @@ const settingStore: any = {
     // flag to show help on no command
     showHelpOnNoCommand: true,
 
-    // flag to show help on invalid parameter, like required param missing, wrong value for choice etc.
+    // flag to show help on invalid parameter, like required param missing, value not allowed etc.
     showHelpOnInvalidParams: true,
 
-    // flag to show help on invalid options, currently on wrong value for choice etc.
+    // flag to show help on invalid options, currently only when value not allowed etc.
     showHelpOnInvalidOptions: true,
 
     // name of the default command, when no command is specified
@@ -60,7 +60,7 @@ const settingStore: any = {
     // No-Command mode related
 
     // name of the main method to call  
-    mainMethod: "main"
+    mainMethod: 'main'
 }
 
 // Sealing settings object
@@ -74,15 +74,15 @@ export abstract class GlobalSettings {
 
     /** Gets/sets global rejection handler for 'unhandledRejection' event of the proccess */
     static rejectionHandler(handler?: RejectionHandlerType): void | RejectionHandlerType {
-        if (typeof handler == "undefined") return settingStore.rejectionHandler
-        if (typeof handler == "function") {
+        if (typeof handler == 'undefined') return settingStore.rejectionHandler
+        if (typeof handler == 'function') {
             settingStore.rejectionHandler = handler
         }
     }
 
     /** Gets/sets index from where minimist should start parsing command line arguments */
     static processArgvStartIndex(index?: number) {
-        if (typeof index == "undefined") {
+        if (typeof index == 'undefined') {
             return settingStore.processArgvStartIndex
         }
         if (!isNaN(index)) {
@@ -92,106 +92,106 @@ export abstract class GlobalSettings {
 
     /** Gets/sets minimist cli parser's options */
     static minimistOptionsObject(options?: any) {
-        if (typeof options == "undefined") {
+        if (typeof options == 'undefined') {
             return settingStore.minimistOptionsObject
         }
-        if (typeof options == "object") {
+        if (typeof options == 'object') {
             settingStore.minimistOptionsObject = options
         }
     }
 
     /** Gets/sets flag to enable global help option '--help, -h' */
     static enableHelpOption(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.helpOptionEnabled
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.helpOptionEnabled = enable
         }
     }
 
     /** Gets/sets flag to enable global version option '--version, v' */
     static enableVersionOption(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.versionOptionEnabled
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.versionOptionEnabled = enable
         }
     }
 
     /** Gets/sets flag to enable program commands */
     static enableCommands(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.programCommandsEnabled
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.programCommandsEnabled = enable
         }
     }
 
     /** Gets/sets flag to enable/disabled default help command */
     static enableHelpCommand(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.helpCommandEnabled
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.helpCommandEnabled = enable
         }
     }
 
     /** Gets/sets flag to show program help on invalid command */
     static showHelpOnInvalidCommand(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.showHelpOnInvalidCommand
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.showHelpOnInvalidCommand = enable
         }
     }
 
     /** Gets/sets flag to show help on no command */
     static showHelpOnNoCommand(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.showHelpOnNoCommand
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.showHelpOnNoCommand = enable
         }
     }
 
-    /** Gets/sets flag to show help on invalid parameter, like required param missing, wrong value for choice etc. */
+    /** Gets/sets flag to show help on invalid parameter, like required param missing, value provided is not allowed etc. */
     static showHelpOnInvalidParams(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.showHelpOnInvalidParams
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.showHelpOnInvalidParams = enable
         }
     }
 
-    /** Gets/sets flag to show help on invalid options, currently on wrong value for choice etc. */
+    /** Gets/sets flag to show help on invalid options i.e when value provided is not allowed */
     static showHelpOnInvalidOptions(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.showHelpOnInvalidOptions
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.showHelpOnInvalidOptions = enable
         }
     }
 
     /** Gets/sets name of the method to call when command name not specified */
     static defaultCommandMethod(name?: string) {
-        if (typeof name == "undefined") {
+        if (typeof name == 'undefined') {
             return settingStore.defaultCommandMethod
         }
-        if (typeof name == "string") {
+        if (typeof name == 'string') {
             settingStore.defaultCommandMethod = name
         }
     }
     /** Gets/sets list of method names to not ignore as command methods */
     static noCommandMethodList(names?: string[]) {
-        if (typeof names == "undefined") {
+        if (typeof names == 'undefined') {
             return settingStore.noCommandMethodList
         }
         if (names && Array.isArray(names) && names.length) {
@@ -201,10 +201,10 @@ export abstract class GlobalSettings {
 
     /** Gets/sets flag to priortize program options, i.e. call 'onProgramOption' even when command has options */
     static prioritizeProgramOptions(enable?: boolean) {
-        if (typeof enable == "undefined") {
+        if (typeof enable == 'undefined') {
             return settingStore.programOptionsPrioritized
         }
-        if (typeof enable == "boolean") {
+        if (typeof enable == 'boolean') {
             settingStore.programOptionsPrioritized = enable
         }
     }
@@ -214,10 +214,10 @@ export abstract class GlobalSettings {
 
     /** Gets/sets name of the main method to call */
     static mainMethod(name?: string) {
-        if (typeof name == "undefined") {
+        if (typeof name == 'undefined') {
             return settingStore.mainMethod
         }
-        if (typeof name == "string") {
+        if (typeof name == 'string') {
             settingStore.mainMethod = name
         }
     }
