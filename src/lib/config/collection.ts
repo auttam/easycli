@@ -95,6 +95,11 @@ export abstract class Collection<T> {
         return this._collection.keys()
     }
 
+    /** Converts values into array */
+    toArray(): T[] {
+        return Array.from(this.getItems())
+    }
+
     /** A method to validate the item being added, must throw error or return false to cancel adding */
     protected abstract validate(item: T): any
 

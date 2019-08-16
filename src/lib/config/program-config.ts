@@ -5,6 +5,7 @@ import { ParamCollection, IParamConfig } from './param-config'
 import { hyphenate, separateWords } from '../utility/string'
 import { getOwnFunctions } from '../utility/reflection'
 import { SettingStore } from '../settings'
+import { ConfigurationError } from '../errors/config-error';
 
 export interface IProgramConfig {
     /** name of the program / cli */
@@ -49,42 +50,52 @@ export class ProgramConfiguration {
 
             var progConfig = new ProgramConfiguration()
 
-            // collecting program info from target
-            if (target.constructor && target.constructor.name) {
-                progConfig.name = separateWords(target.constructor.name)
-                progConfig.binaryName = hyphenate(target.constructor.name)
-            }
-
-            // Check if target is not Program Class itself
-            if (target.constructor.name != 'Program') {
-                // generate command configuration
-                if (SettingStore.commandsEnabled) {
-                    var nonCmdMethods = SettingStore.nonCmdMethods || []
-                    // collecting names of commands using command convention
-                    for (var prop of getOwnFunctions(target)) {
-                        if (prop.endsWith('Command') && nonCmdMethods.indexOf(prop) == -1) {
-
-                            // adding command to command collection
-                            progConfig.commands.addBySignature(prop, target[prop])
-                        }
-                    }
-                } else {
-                    // generate program parameter configuration
-                    if (SettingStore.mainMethod && target[SettingStore.mainMethod]) {
-                        progConfig.params.addBySignature(target[SettingStore.mainMethod])
-                    }
-                }
-            }
-
-            // setting default command if it exists in the 
-            if (SettingStore.defaultCommandMethod && typeof target[SettingStore.defaultCommandMethod] == 'function') {
-                progConfig.defaultCommand = SettingStore.defaultCommandMethod
-            }
+            // reading configuration from target
+            progConfig.readFromObject(target)
 
             // Injecting program configuration to the target object
             target[propertyName] = progConfig
         }
         return target[propertyName]
+    }
+
+    public readFromObject(source: any) {
+
+        // collecting program info from target
+        if (source.constructor && source.constructor.name) {
+            if (source.constructor.name == 'Object') {
+                throw new ConfigurationError('Source must have a named constructor', source)
+            }
+            this.name = separateWords(source.constructor.name)
+            this.binaryName = hyphenate(source.constructor.name)
+        }
+
+        // Check if source is not Program Class itself
+        if (source.constructor.name != 'Program') {
+            // generate command configuration
+            if (SettingStore.commandsEnabled) {
+                var nonCmdMethods = SettingStore.nonCmdMethods || []
+                // collecting names of commands using command convention
+                for (var prop of getOwnFunctions(source)) {
+                    if (prop.endsWith('Command') && nonCmdMethods.indexOf(prop) == -1) {
+
+                        // adding command to command collection
+                        this.commands.addBySignature(prop, source[prop])
+                    }
+                }
+            } else {
+                // generate program parameter configuration
+                if (SettingStore.mainMethod && source[SettingStore.mainMethod]) {
+                    this.params.addBySignature(source[SettingStore.mainMethod])
+                }
+            }
+        }
+
+        // setting default command if it exists in the 
+        if (SettingStore.defaultCommandMethod && typeof source[SettingStore.defaultCommandMethod] == 'function') {
+            this.defaultCommand = SettingStore.defaultCommandMethod
+        }
+
     }
 
     public merge(config: IProgramConfig) {
@@ -107,7 +118,10 @@ export class ProgramConfiguration {
         this.commands.addList(config.commands)
     }
 
-    /** Check whether there is any command defined other than the default command */
+    /** Check whether there is any command defined other than the default command 
+     * @remove
+     * 
+    */
     public hasRealCommand() {
         // no command present
         if (!this.commands.length) return false
