@@ -73,6 +73,17 @@ export class OptionCollection extends Collection<Option>{
         configs.forEach(config => this.add(config))
     }
 
+    public addByAny(config: any) {
+        this.add({
+            name: config.name || '',
+            help: config.help,
+            value: config.value,
+            acceptOnly: config.acceptOnly,
+            aliases: config.aliases,
+            propName: config.name
+        })
+    }
+
     protected validate(item: Option) {
 
         // Rule 1. Option must have a name

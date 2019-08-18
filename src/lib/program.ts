@@ -1,22 +1,21 @@
-import { GlobalSettings } from './global-settings'
-import { ProgramConfiguration } from './program-config'
+import { updateStore, ISettings, SettingStore } from './settings'
+import { ProgramConfiguration, IProgramConfig } from './config/program-config'
 import * as Runtime from './runtime'
-import { RuntimeError } from './types/errors'
+import { RuntimeError } from './errors/runtime-error'
 
 import * as Help from './help'
 
 /** A base class for a cli program */
-export class Program extends GlobalSettings {
+export class Program {
     public config: ProgramConfiguration
 
     // Initialization:
-    constructor(configuration?: any) {
-        super()
+    constructor(configuration?: IProgramConfig) {
 
         // setting 'config' with new or already injected configuration object
         this.config = ProgramConfiguration.injectConfiguration(this)
 
-        // merging configuration parameter to the program's config object 
+        // merging configuration to the program's config object 
         this.config.merge(configuration)
 
         // Sealing the configuration object
@@ -25,6 +24,10 @@ export class Program extends GlobalSettings {
         // initializing runtime
         Runtime.init()
 
+    }
+
+    static settings(settings: ISettings) {
+        updateStore(settings)
     }
 
     // Startup:
@@ -37,7 +40,7 @@ export class Program extends GlobalSettings {
         }
 
         // Attach handler to unhandled Rejections event
-        Runtime.handleRejections(Program.rejectionHandler)
+        Runtime.handleRejections(SettingStore.rejectionHandler)
 
         // Run program and wait for the promise resolution
         var promise = Runtime.runProgram(self)

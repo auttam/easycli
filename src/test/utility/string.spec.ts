@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import * as stringUtil from '../../lib/utility/string'
 
-describe('String Utils', function () {
+describe('String Utility Tests', function () {
 
     describe('hyphenate()', function () {
 

@@ -88,6 +88,18 @@ export class ParamCollection extends Collection<Param>{
         }
     }
 
+    addByAny(config: any) {
+        this.add({
+            name: config.name || '',
+            required: config.required,
+            type: config.type,
+            help: config.help,
+            value: config.value,
+            acceptOnly: config.acceptOnly,
+            propName: config.propName
+        })
+    }
+
     /** Creates and adds param in the collection */
     add(config: IParamConfig) {
         if (!config) throw new ConfigurationError('Parameter configuration cannot be null or undefined')

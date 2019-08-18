@@ -3,8 +3,9 @@ import { ConfigurationError } from '../../lib/errors/config-error'
 
 const expect = require('chai').expect
 
+
 // Tests for Command Class
-describe('Command Class', () => {
+describe('Command Configuration Tests', () => {
 
     describe('constructor()', () => {
 
@@ -17,7 +18,7 @@ describe('Command Class', () => {
             expect(command.propName).to.equal('myCommand')
         })
 
-        it('sets command name from method name in hyphenated form if name not provided', () => {
+        it('sets command name from method name in hyphenated form', () => {
             var command = new Command({ method: 'my1Command' })
             expect(command.name).to.equal('my1')
 
@@ -105,7 +106,7 @@ describe('Command Class', () => {
     })
 })
 
-describe('Collection Class', () => {
+describe('Command Collection Tests', () => {
     var collection: CommandCollection
     beforeEach(() => {
         collection = new CommandCollection()

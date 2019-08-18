@@ -10,14 +10,35 @@ var _defaultCommand: string = 'defaultCommand'
 interface RejectionHandlerType { (reason: string, promise?: any): void }
 
 // Objects to store global settings
-interface ISettings {
+export interface ISettings {
+    /** name of the main method to call when program is running in no-command mode*/
     mainMethod?: string
+    /** global rejection handler for 'unhandledRejection' event of the proccess */
     rejectionHandler?: RejectionHandlerType,
+    /** index from where minimist should start parsing command line arguments */
     processArgvStartIndex?: number,
+    /** options for minimist arguments parser */
     minimistOptions?: any,
-    commandsEnabled?: boolean,
+    /** flag to enable program commands */
+    enableCommands?: boolean,
+    /** list of method names to ignore as command methods */
     nonCmdMethods?: string[],
-    defaultCommandMethod?: string
+    /** name of the method that is called when command name not supplied */
+    defaultCommandMethod?: string,
+    /** flag to enable global help command  */
+    enableHelpCommand?: boolean,
+    /** flag to enable global version option */
+    enableVersionOption?: boolean,
+    /** flag to show help when no command argument is supplied to the program */
+    showHelpOnNoCommand?: boolean,
+    /** flag to enable global help option */
+    enableHelpOption?: boolean,
+    /** flag to show help on invalid options i.e when value provided is not allowed */
+    showHelpOnInvalidOptions?: boolean
+    /** flag to prioritize program options, i.e. call 'onProgramOption' even when command has options */
+    prioritizeProgramOptions?: boolean,
+    /** flag to show help on invalid parameter, like required param missing, value provided is not allowed etc. */
+    showHelpOnInvalidParams?: boolean
 }
 
 export const SettingStore: ISettings = {
@@ -34,7 +55,25 @@ export const SettingStore: ISettings = {
     minimistOptions: null,
 
     /** flag to enable program commands */
-    commandsEnabled: false,
+    enableCommands: false,
+
+    /** flag to enable global help command  */
+    enableHelpCommand: true,
+
+    /** flag to enable global version option */
+    enableVersionOption: true,
+
+    /** flag to enable global help option */
+    enableHelpOption: true,
+
+    /** flag to show help when no command argument is supplied to the program */
+    showHelpOnNoCommand: true,
+
+    showHelpOnInvalidOptions: true,
+
+    prioritizeProgramOptions: false,
+
+    showHelpOnInvalidParams: true,
 
     /** name of the method that is called when command name not supplied */
     set defaultCommandMethod(name: string) {

@@ -2,7 +2,7 @@ import { SettingStore, updateStore } from '../lib/settings'
 const expect = require('chai').expect
 
 // Tests for Setting Store
-describe('Settings Store', () => {
+describe('Settings Store Tests', () => {
     describe('updateStore()', () => {
         it('updates settings', () => {
             updateStore({

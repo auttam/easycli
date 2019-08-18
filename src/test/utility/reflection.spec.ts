@@ -1,7 +1,7 @@
 import { expect } from 'chai'
 import { mergeTypeSafe, getParameters, getOwnFunctions } from '../../lib/utility/reflection'
 
-describe('Reflection Utility', function () {
+describe('Reflection Utility Tests', function () {
 
     describe('mergeTypeSafe()', function () {
         it('copies only defined properties', function () {

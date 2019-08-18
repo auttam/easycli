@@ -3,7 +3,7 @@ import { ConfigurationError } from '../../lib/errors/config-error'
 const expect = require('chai').expect
 
 // Tests for Option Class
-describe('Option Class', () => {
+describe('Option Configuration Tests', () => {
 
     describe('constructor()', () => {
         it('throws exception on empty name', () => {
@@ -102,7 +102,7 @@ describe('Option Class', () => {
 })
 
 // Tests Option Collection
-describe('Option Collection', () => {
+describe('Option Collection Tests', () => {
     var collection: OptionCollection;
 
     beforeEach(function () {

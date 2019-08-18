@@ -3,7 +3,7 @@ import { ConfigurationError } from '../../lib/errors/config-error'
 const expect = require('chai').expect
 
 // Tests for Param Class
-describe('Param Class', () => {
+describe('Param Configuration Tests', () => {
 
     describe('constructor()', () => {
         it('throws exception on empty name', () => {
@@ -182,6 +182,38 @@ describe('Param Collection', () => {
             collection.addByPropNames(props)
             expect(collection.indexParamsParam).to.equal(1)
             expect(collection.indexOptionsParam).to.equal(3)
+        })
+    })
+
+    describe('addBySignature()', () => {
+        it('adds params from method signature', () => {
+            function test(message: any, testParam: any) { }
+            collection.addBySignature(test)
+            expect(collection.toArray().map(p => p.name)).to.eql(['message', 'test-param'])
+            expect(collection.toArray().map(p => p.propName)).to.eql(['message', 'testParam'])
+        })
+    })
+
+    describe('addByAny()', () => {
+        it('add by any object that contains required properties', () => {
+            collection.addByAny({
+                name: 'my-param',
+                something: 'abc',
+                propName: 'abcd'
+            })
+            expect(collection.get('my-param')).to.include({ name: 'my-param', propName: 'abcd' })
+        })
+        it('merges by any object that contains required properties', () => {
+            collection.addByAny({
+                name: 'my-param',
+                something: 'abc',
+                propName: 'abcd'
+            })
+            collection.addByAny({
+                name: 'my-param',
+                propName: 'xyz'
+            })
+            expect(collection.get('my-param')).to.include({ name: 'my-param', propName: 'xyz' })
         })
     })
 })

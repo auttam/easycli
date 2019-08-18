@@ -22,7 +22,7 @@ class CollectionTest extends Collection<{ name: string, value: string }> {
     protected itemAdded(item: { name: string; value: string; }): void { }
 }
 
-describe('Collection Class', function () {
+describe('Collection Class Tests', function () {
 
     var collection: CollectionTest;
     var testItem = { name: 'color', value: 'pink' }

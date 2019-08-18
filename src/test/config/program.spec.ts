@@ -8,9 +8,10 @@ const expect = require('chai').expect
 describe('Program Configuration Class', () => {
 
     describe('readFromObject()', () => {
-        beforeEach(() => {
+        afterEach(() => {
             updateStore({
-                commandsEnabled: false
+                enableCommands: false,
+                defaultCommandMethod: 'defaultCommand',
             })
         })
 
@@ -48,7 +49,7 @@ describe('Program Configuration Class', () => {
         it('reads methods with "Command" suffix as program commands when enabled', () => {
             var config = new ProgramConfiguration()
             updateStore({
-                commandsEnabled: true
+                enableCommands: true
             })
             class SampleProgram {
                 test1() { }
@@ -69,7 +70,7 @@ describe('Program Configuration Class', () => {
         it('generates command params collection from method signature', () => {
             var config = new ProgramConfiguration()
             updateStore({
-                commandsEnabled: true
+                enableCommands: true
             })
             class SampleProgram {
                 test1() { }
@@ -117,23 +118,25 @@ describe('Program Configuration Class', () => {
             expect(config.commands.length).to.equal(0)
         })
 
-        it('sets default command name from setting store if method is implemented', () => {
+        it('doesn\'t add default command to the command collection', () => {
             var config = new ProgramConfiguration()
             updateStore({
-                defaultCommandMethod: 'test123',
+                enableCommands: true
             })
 
-            class Sample1 { }
+            class Sample1 { defaultCommand() { } }
             config.readFromObject(new Sample1())
-            expect(config.defaultCommand).to.equal('')
+            console.log(config.commands)
+            expect(config.commands.length).to.equal(0)
 
             updateStore({
-                commandsEnabled: true
+                enableCommands: true,
+                defaultCommandMethod: 'test123',
             })
             class Sample2 { test123() { } }
             config = new ProgramConfiguration()
             config.readFromObject(new Sample2())
-            expect(config.defaultCommand).to.equal('test123')
+            expect(config.commands.length).to.equal(0)
 
         })
     })
@@ -166,7 +169,6 @@ describe('Program Configuration Class', () => {
             config.merge({
                 name: 'name2',
                 binaryName: 'bname1',
-                defaultCommand: 'def',
                 help: 'h',
                 version: '2'
             })
