@@ -174,7 +174,7 @@ export class ProgramArgs {
             }
 
             // getting allowed value
-            mappedParams[paramInfo.propName] = this.getAcceptedValue(this.params[currentParamListIdx], paramInfo)
+            mappedParams[paramInfo.propName] = this.getAcceptedValue(mappedParams[paramInfo.propName], paramInfo)
         }
         return mappedParams
     }
@@ -182,6 +182,7 @@ export class ProgramArgs {
     supplied() {
         return this.suppliedArgs
     }
+
     getAcceptedValue(value: string | string[], infoObject?: IParamConfig | IOptionConfig): void | string | string[] {
         if (!value || !infoObject) return value
 

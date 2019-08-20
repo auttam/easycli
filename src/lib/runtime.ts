@@ -60,6 +60,21 @@ async function callback(program: any, methodName: string, ...details: any[]) {
     }
 }
 
+/** gets an array of arguments that can be applied to a method */
+function createMethodArgs(collection: ParamCollection, $params: any, $options: any) {
+    var args = []
+    for (var param of collection.getItems()) {
+        args[param.$idx] = $params[param.propName]
+    }
+    if (collection.indexParamsParam) {
+        args[collection.indexParamsParam] = $params
+    }
+    if (collection.indexOptionsParam) {
+        args[collection.indexOptionsParam] = $options
+    }
+    return args
+}
+
 /** Checks Whether a program is already running */
 export function running() {
     return programRunning
@@ -141,7 +156,7 @@ export async function runProgram(program: any) {
             var programParams = await programArgs.createParamsMap(program.config.params)
 
             // 4b. call program's main method
-            return callback(program, SettingStore.mainMethod, programParams, programOptions)
+            return callback(program, SettingStore.mainMethod, ...createMethodArgs(program.config.params, programParams, programOptions))
         } catch (ex) {
 
             // Showing command help
@@ -229,8 +244,8 @@ export async function runCommand(program: any, reqCommandName: string) {
     }
 
     // finally execute the command
- //   var a = command.params.createMap(params, options)
-    return callback(program, command.methodName, params, options)
+    //   var a = command.params.createMap(params, options)
+    return callback(program, command.methodName, ...createMethodArgs(command.params, params, options))
 
 }
 
