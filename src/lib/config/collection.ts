@@ -85,6 +85,11 @@ export abstract class Collection<T> {
         }
     }
 
+    /** Clears the collection */
+    protected clear() {
+        this._collection.clear()
+    }
+
     /** Gets all items from the collection */
     getItems(): IterableIterator<T> {
         return this._collection.values()
@@ -98,7 +103,7 @@ export abstract class Collection<T> {
     /** Converts values into array */
     toArray(): T[] {
         return Array.from(this.getItems())
-    }
+    }    
 
     /** A method to validate the item being added, must throw error or return false to cancel adding */
     protected abstract validate(item: T): any

@@ -45,7 +45,6 @@ export function init() {
 
 }
 
-
 /** Attaches event handler once to process' unhandled rejection event */
 export function handleRejections(handler: any) {
     if (handler && typeof handler == 'function' && !rejectionHandlerAttached) {
@@ -60,7 +59,6 @@ async function callback(program: any, methodName: string, ...details: any[]) {
         return program[methodName].apply(program, details)
     }
 }
-
 
 /** Checks Whether a program is already running */
 export function running() {
@@ -231,6 +229,7 @@ export async function runCommand(program: any, reqCommandName: string) {
     }
 
     // finally execute the command
+ //   var a = command.params.createMap(params, options)
     return callback(program, command.methodName, params, options)
 
 }

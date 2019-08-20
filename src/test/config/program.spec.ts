@@ -156,16 +156,28 @@ describe('Program Configuration Class', () => {
     })
 
     describe('merge()', () => {
-        it('merges all the fields', () => {
+
+        class SampleProgram {
+            test1() { }
+            test2Command(message: any, saveFile: any) { }
+            method() { }
+            get a() { return 1 }
+            set a(v) { }
+            main(param1: any, param2: any, $options: any, $params: any) { }
+        }
+
+        it('replaces auto generated program info', () => {
             var config = new ProgramConfiguration()
-            class SampleProgram {
-                test1() { }
-                test2Command(message: any, saveFile: any) { }
-                method() { }
-                get a() { return 1 }
-                set a(v) { }
-            }
+
             config.readFromObject(new SampleProgram())
+            // generated info
+            expect(config.toConfig()).to.eql({
+                name: 'Sample Program',
+                binaryName: 'sample-program',
+                version: '1.0.0',
+                help: ''
+            })
+            // merged info
             config.merge({
                 name: 'name2',
                 binaryName: 'bname1',
@@ -178,6 +190,24 @@ describe('Program Configuration Class', () => {
                 help: 'h',
                 version: '2'
             })
+        })
+
+        it('replaces auto generated params', () => {
+            var config = new ProgramConfiguration()
+            config.readFromObject(new SampleProgram())
+            expect(config.params.toArray()[0]).to.include({ name: 'param1', propName: 'param1', help: '' })
+            config.merge({
+                params: [
+                    { name: 'param1', help: 'h1' }
+                ]
+            })
+            expect(config.params.toArray()[0]).to.include({ name: 'param1', propName: 'param1', help: 'h1' })
+            config.merge({
+                params: [
+                    { name: 'param1', propName:'prop1' }
+                ]
+            })
+            expect(config.params.toArray()[0]).to.include({ name: 'param1', propName: 'param1', help: 'h1' })
         })
     })
 })

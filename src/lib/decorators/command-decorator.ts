@@ -35,17 +35,8 @@ export function commandDecoratorFactory(commandDefinition?: ICommandDefinition) 
 
         // merging parameters
         if (commandDefinition.params && commandDefinition.params.length) {
-            commandDefinition.params.forEach(definition => {
-                // throw error if definition has a different property name
-                // for already existing (auto-generated) param 
-                if (definition.propName && definition.name) {
-                    var param = command.params.get(hyphenate(definition.name))
-                    if (param && param.propName != definition.propName) {
-                        throw new ConfigurationError('Parameter property name doesn\'t match with method parameter', definition)
-                    }
-                }
-                command.params.addByAny(definition)
-            })
+            var params: any = commandDefinition.params
+            command.params.mergeByConfigs(params)
         }
 
         // merging options

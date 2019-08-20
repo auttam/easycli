@@ -79,13 +79,13 @@ export class ProgramConfiguration {
                     if (prop && prop == SettingStore.defaultCommandMethod) { return }
                     if (prop.endsWith('Command') && nonCmdMethods.indexOf(prop) == -1) {
                         // adding command to command collection
-                        this.commands.addBySignature(prop, source[prop])
+                        this.commands.addMethod(prop, source[prop])
                     }
                 }
             } else {
                 // generate program parameter configuration
                 if (SettingStore.mainMethod && source[SettingStore.mainMethod]) {
-                    this.params.addBySignature(source[SettingStore.mainMethod])
+                    this.params.initByMethod(source[SettingStore.mainMethod])
                 }
             }
         }
@@ -105,7 +105,7 @@ export class ProgramConfiguration {
         this.options.addList(config.options)
 
         // merging params
-        this.params.addList(config.params)
+        this.params.mergeByConfigs(config.params || [])
 
         // merging commands
         this.commands.addList(config.commands)

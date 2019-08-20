@@ -1,4 +1,4 @@
-import { Param, ParamType, ParamCollection } from '../../lib/config/param-config'
+import { Param, ParamType, ParamCollection, IParamConfig } from '../../lib/config/param-config'
 import { ConfigurationError } from '../../lib/errors/config-error'
 const expect = require('chai').expect
 
@@ -48,13 +48,25 @@ describe('Param Configuration Tests', () => {
                 value: 'val1',
                 propName: 'myParam',
                 required: false,
-                type: 'single'
+                type: 'single',
+                $idx: -1
             })
         })
 
         it('removes duplicates from accepted values', () => {
             var param = new Param({ name: 'myParam', acceptOnly: ['v1', 'v2', 'v1'] })
             expect(param.acceptOnly).to.eql(['v1', 'v2'])
+        })
+    })
+
+    describe('createFromAny()', () => {
+        it('adds config by any object that contains required properties', () => {
+            var param = Param.createFromAny({
+                name: 'my-param',
+                something: 'abc',
+                propName: 'abcd'
+            })
+            expect(param).to.include({ name: 'my-param', propName: 'abcd' })
         })
     })
 })
@@ -67,19 +79,75 @@ describe('Param Collection', () => {
         collection = new ParamCollection();
     })
 
-    describe('add()', () => {
-        it('adds new config', () => {
+    describe('initByProperties()', () => {
+
+        it('create collection from list of property names', () => {
+            var props = ['param', 'paramName']
+            collection.initByProperties(props)
+            expect(collection.get('param')).to.include({ name: 'param', propName: 'param' })
+            expect(collection.get('param-name')).to.include({ name: 'param-name', propName: 'paramName' })
+        })
+
+        it('throws configuration error if collection is not empty', () => {
+            var props = ['param', 'paramName']
+            collection.initByProperties(props)
+            expect(() => collection.initByProperties(props)).to.throw(ConfigurationError)
+        })
+
+        it('creates param of list type for ...param', () => {
+            var props = ['param', '...paramName']
+            collection.initByProperties(props)
+            expect(collection.get('param')).to.include({ name: 'param', propName: 'param' })
+            expect(collection.get('param-name')).to.include({ name: 'param-name', propName: 'paramName', type: ParamType.LIST })
+        })
+
+        it('doesn\'t add $params and $options parameter', () => {
+            var props = ['message', '$params', 'color', '$options']
+            collection.initByProperties(props)
+            expect(collection.length).to.equal(2)
+        })
+
+        it('stores index of param and options parameter always', () => {
+            var props = ['message', '$params', 'color', '$options']
+            collection.initByProperties(props)
+            expect(collection.indexParamsParam).to.equal(1)
+            expect(collection.indexOptionsParam).to.equal(3)
+        })
+
+        it('stores index of defined parameters if saveIndex is set', () => {
+            var props = ['message', '$params', 'color', '$options']
+            collection.initByProperties(props, true)
+            expect(collection.indexParamsParam).to.equal(1)
+            expect(collection.indexOptionsParam).to.equal(3)
+            expect(collection.get('message').$idx).to.equal(0)
+            expect(collection.get('color').$idx).to.equal(2)
+        })
+    })
+
+    describe('initByMethod()', () => {
+        it('adds params from method signature', () => {
+            function test(message: any, testParam: any) { }
+            collection.initByMethod(test)
+            expect(collection.toArray().map(p => p.name)).to.eql(['message', 'test-param'])
+            expect(collection.toArray().map(p => p.propName)).to.eql(['message', 'testParam'])
+        })
+    })
+
+    describe('merge()', () => {
+        it('adds new param if collection is empty', () => {
+            expect(collection.length).to.equal(0)
             var config = { name: 'param', help: 'param help' }
-            collection.add(config)
+            collection.merge(config)
+            expect(collection.length).to.equal(1)
             var got = collection.get('param')
             expect(got).to.include(config)
         })
 
         it('merges params with same names', () => {
-            collection.add({
+            collection.merge({
                 name: 'my-param'
             })
-            collection.add({
+            collection.merge({
                 name: 'my-param',
                 propName: 'p1'
             })
@@ -87,12 +155,12 @@ describe('Param Collection', () => {
         })
 
         it('throws error for two params with same property names', () => {
-            collection.add({
+            collection.merge({
                 name: 'my-param',
                 propName: 'p1'
             })
             expect(() => {
-                collection.add({
+                collection.merge({
                     name: 'my-param2',
                     propName: 'p1'
                 })
@@ -101,119 +169,112 @@ describe('Param Collection', () => {
 
         it('throws error if required is defined after optional', () => {
             var config: any = { name: 'param1' }
-            collection.add(config)
+            collection.merge(config)
             expect(() => {
-                collection.add({ name: 'param2', required: true })
+                collection.merge({ name: 'param2', required: true })
             }).to.throw(ConfigurationError)
         })
 
         it('throws error if single type is defined after list type', () => {
             var config: any = { name: 'param1' }
-            collection.add(config)
-            collection.add({ name: 'param2', type: ParamType.LIST })
+            collection.merge(config)
+            collection.merge({ name: 'param2', type: ParamType.LIST })
 
             expect(() => {
-                collection.add({ name: 'param3', type: ParamType.SINGLE })
+                collection.merge({ name: 'param3', type: ParamType.SINGLE })
             }).to.throw(ConfigurationError)
         })
 
         it('throws error if there are more than one list type', () => {
             var config: any = { name: 'param1' }
-            collection.add(config)
-            collection.add({ name: 'param2', type: ParamType.LIST })
+            collection.merge(config)
+            collection.merge({ name: 'param2', type: ParamType.LIST })
 
             expect(() => {
-                collection.add({ name: 'param3', type: ParamType.LIST })
+                collection.merge({ name: 'param3', type: ParamType.LIST })
             }).to.throw(ConfigurationError)
         })
 
         it('allows to required after required param ', () => {
             var config: any = { name: 'param1', required: true }
-            collection.add(config)
+            collection.merge(config)
             expect(() => {
-                collection.add({ name: 'param2', required: true })
-                collection.add({ name: 'param3', required: true })
+                collection.merge({ name: 'param2', required: true })
+                collection.merge({ name: 'param3', required: true })
             }).to.not.throw(ConfigurationError)
         })
 
         it('allows to optional after required param ', () => {
             var config: any = { name: 'param1', required: true }
-            collection.add(config)
+            collection.merge(config)
             expect(() => {
-                collection.add({ name: 'param2' })
+                collection.merge({ name: 'param2' })
             }).to.not.throw(ConfigurationError)
         })
 
     })
 
-    describe('addList()', () => {
-        it('throws error for an param in the list with empty names', function () {
-            expect(() => collection.addList([{
-                name: ""
-            }])).to.throw(ConfigurationError)
+    describe('mergeByConfigs()', () => {
+        it('adds param if collection is empty', () => {
+            expect(collection.length).to.equal(0)
+            var config = { name: 'param', help: 'param help' }
+            collection.mergeByConfigs([config])
+            expect(collection.length).to.equal(1)
+            var got = collection.get('param')
+            expect(got).to.include(config)
         })
-    })
-
-    describe('addByPropNames()', () => {
-        it('create collection from property names', () => {
-            var props = ['param', 'paramName']
-            collection.addByPropNames(props)
-            expect(collection.get('param')).to.include({ name: 'param', propName: 'param' })
-            expect(collection.get('param-name')).to.include({ name: 'param-name', propName: 'paramName' })
-            collection.add({ name: "param", value: 'val1' })
-            expect(collection.get('param')).to.include({ name: 'param', propName: 'param', value: 'val1' })
+        it('merges available properties for the params in collection ', () => {
+            collection.merge({ name: 'param1', help: 'h1', propName: 'prop1' })
+            collection.merge({ name: 'param2', help: 'h2' })
+            collection.merge({ name: 'param3', help: 'h3' })
+            var lastParam = collection.get('param3')
+            expect(collection.length).to.equal(3)
+            expect(collection.get('param1')).to.include({ help: 'h1', propName: 'prop1' })
+            expect(collection.get('param2')).to.include({ help: 'h2', propName: 'param2' })
+            collection.mergeByConfigs([
+                { name: 'param1', propName: 'p1' },
+                { name: 'param5' },
+                { name: 'param4' }])
+            expect(collection.length).to.equal(3)
+            expect(collection.get('param1')).to.include({ help: 'h1', propName: 'p1' })
+            expect(collection.get('param5')).to.include({ help: 'h2', propName: 'param2' })
+            lastParam.name = 'param4'
+            expect(collection.toArray()[2]).to.eql(lastParam)
         })
-
-        it('creates param of list type for ...param', () => {
-            var props = ['param', '...paramName']
-            collection.addByPropNames(props)
-            expect(collection.get('param')).to.include({ name: 'param', propName: 'param' })
-            expect(collection.get('param-name')).to.include({ name: 'param-name', propName: 'paramName', type: ParamType.LIST })
-        })
-
-        it('don\'t add param and options parameter', () => {
-            var props = ['message', 'params', 'color', 'options']
-            collection.addByPropNames(props)
+        it('adds remaining params if existing collection is smaller', () => {
+            collection.merge({ name: 'param1', help: 'h1', propName: 'prop1' })
+            expect(collection.length).to.equal(1)
+            collection.mergeByConfigs([
+                { name: 'param1', propName: 'p1' },
+                { name: 'param5' }])
             expect(collection.length).to.equal(2)
+            expect(collection.get('param5')).to.include({ propName: 'param5' })
+        })
+        it('un-touch remaining prams from collection if list is smaller', () => {
+            collection.merge({ name: 'param1', help: 'h1', propName: 'prop1' })
+            collection.merge({ name: 'param2', help: 'h2' })
+            expect(collection.length).to.equal(2)
+            collection.mergeByConfigs([
+                { name: 'param1', propName: 'p1' }])
+            expect(collection.length).to.equal(2)
+            expect(collection.get('param1')).to.include({ propName: 'p1' })
+            expect(collection.get('param2')).to.include({ propName: 'param2' })
+
+        })
+        it('doesn\'t change $ids', () => {
+            // @ts-ignore
+            collection.merge({ name: 'param1', help: 'h1', propName: 'prop1', $idx: 5 })
+            expect(collection.get('param1').$idx).to.equal(-1)
         })
 
-        it('stores index of param and options parameter', () => {
-            var props = ['message', 'params', 'color', 'options']
-            collection.addByPropNames(props)
-            expect(collection.indexParamsParam).to.equal(1)
-            expect(collection.indexOptionsParam).to.equal(3)
-        })
-    })
-
-    describe('addBySignature()', () => {
-        it('adds params from method signature', () => {
+        it('throws exception if $idx present and prop names are different', () => {
             function test(message: any, testParam: any) { }
-            collection.addBySignature(test)
-            expect(collection.toArray().map(p => p.name)).to.eql(['message', 'test-param'])
-            expect(collection.toArray().map(p => p.propName)).to.eql(['message', 'testParam'])
+            collection.initByMethod(test)
+            collection.mergeByConfigs([{ name: 'param1' }])
+            expect(collection.get('param1').propName).to.equal('message')
+            expect(() => collection.mergeByConfigs([{ name: 'param1' }, { name: 'test-param', propName: 'prop1' }]))
+                .to.throw(ConfigurationError)
         })
     })
 
-    describe('addByAny()', () => {
-        it('add by any object that contains required properties', () => {
-            collection.addByAny({
-                name: 'my-param',
-                something: 'abc',
-                propName: 'abcd'
-            })
-            expect(collection.get('my-param')).to.include({ name: 'my-param', propName: 'abcd' })
-        })
-        it('merges by any object that contains required properties', () => {
-            collection.addByAny({
-                name: 'my-param',
-                something: 'abc',
-                propName: 'abcd'
-            })
-            collection.addByAny({
-                name: 'my-param',
-                propName: 'xyz'
-            })
-            expect(collection.get('my-param')).to.include({ name: 'my-param', propName: 'xyz' })
-        })
-    })
 })

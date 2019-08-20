@@ -23,9 +23,9 @@ export function programDecoratorFactory(programDefinition?: IProgramDefinition) 
 
             // merging parameters
             if (programDefinition.params && programDefinition.params.length) {
-                programDefinition.params.forEach(definition => {
-                    config.params.addByAny(definition)
-                })
+                var params: any = programDefinition.params
+                config.params.mergeByConfigs(params)
+
             }
 
             // merging options

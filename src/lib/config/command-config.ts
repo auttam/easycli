@@ -50,7 +50,7 @@ export class Command extends Config {
         // initializing params
         this.params = new ParamCollection()
         if (config.params) {
-            this.params.addList(config.params)
+            this.params.mergeByConfigs(config.params)
         }
 
         // initializing options        
@@ -72,7 +72,7 @@ export class Command extends Config {
         super.merge(config, { ignoreProps: ['options', 'params'] })
         this.name = config.name || this.name
         if (config.params) {
-            this.params.addList(config.params)
+            this.params.mergeByConfigs(config.params)
         }
         if (config.options) {
             this.options.addList(config.options)
@@ -115,9 +115,9 @@ export class CommandCollection extends Collection<Command>{
     }
 
     /** Creates and adds command in the collection from a method definition */
-    addBySignature(name: string, methodSignature: any) {
+    addMethod(name: string, methodSignature: any) {
         var command = new Command({ method: name })
-        command.params.addBySignature(methodSignature)
+        command.params.initByMethod(methodSignature)
         this.addByCommand(command)
     }
 

@@ -117,7 +117,7 @@ describe('Program Args', () => {
         it('maps param collection with supplied params', async () => {
             progArgs.read(args)
             var collection = new ParamCollection()
-            collection.addList([{ name: 'my-param1' }, { name: 'my-param2' }])
+            collection.addByConfig([{ name: 'my-param1' }, { name: 'my-param2' }])
             var param = await progArgs.createParamsMap(collection)
             expect(param.myParam1).to.equal('arg2')
             expect(param.myParam2).to.equal('arg4')
