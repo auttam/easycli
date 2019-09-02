@@ -1,9 +1,8 @@
-import { ProgramArgs } from '../lib/program-args'
-import { SettingStore } from '../lib/settings'
-import { ParamCollection, ParamType } from '../lib/config/param-config';
-import { OptionCollection } from '../lib/config/option-config';
-import { ConfigurationError } from '../lib/errors/config-error';
-import { RuntimeError } from '../lib/errors/runtime-error';
+import { ProgramArgs } from '../../lib/runtime/program-args'
+import { SettingStore } from '../../lib/settings'
+import { ParamCollection, ParamType } from '../../lib/config/param-config';
+import { OptionCollection } from '../../lib/config/option-config';
+import { RuntimeError } from '../../lib/errors/runtime-error';
 
 const expect = require('chai').expect
 
@@ -26,8 +25,8 @@ describe('Program Args', () => {
     describe('supplied()', () => {
         it('reads from specified index', () => {
             progArgs.read(args)
-            expect(progArgs.supplied().length).to.equal(7)
-            expect(progArgs.supplied()[0]).to.equal('arg1')
+            expect(progArgs.toArray().length).to.equal(7)
+            expect(progArgs.toArray()[0]).to.equal('arg1')
         })
     })
 
@@ -37,24 +36,24 @@ describe('Program Args', () => {
             process.argv = ['node', './', 'arg1', 'arg2', 'arg3']
             progArgs.read()
             process.argv = processArgs
-            expect(progArgs.params).to.eql(['arg1', 'arg2', 'arg3'])
+            expect(progArgs.getParams()).to.eql(['arg1', 'arg2', 'arg3'])
         })
 
         it('reads non-option arguments as params', () => {
             progArgs.read(args)
-            expect(progArgs.params).to.eql(['arg1', 'arg2', 'arg4'])
+            expect(progArgs.getParams()).to.eql(['arg1', 'arg2', 'arg4'])
         })
 
         it('reads option arguments as options', () => {
             progArgs.read(args)
-            expect(progArgs.options).to.eql({ 'option-arg1': true, 'option-arg2': 'arg3', 'option-arg5': false })
+            expect(progArgs.getOptions()).to.eql({ 'option-arg1': true, 'option-arg2': 'arg3', 'option-arg5': false })
         })
 
         it('reads first argument as command name if commands enabled', () => {
             SettingStore.enableCommands = true
             progArgs.read(args)
-            expect(progArgs.commandName).to.equal('arg1')
-            expect(progArgs.params).to.eql(['arg2', 'arg4'])
+            expect(progArgs.getCommandName()).to.equal('arg1')
+            expect(progArgs.getParams()).to.eql(['arg2', 'arg4'])
         })
 
     })
@@ -105,10 +104,10 @@ describe('Program Args', () => {
 
         it('throws exception when value not matched and default value is not set', () => {
             progArgs.read(args)
-            expect(()=>{
-                progArgs.getAcceptedValue('test', { name: 'option-arg1', acceptOnly:['a'] })
+            expect(() => {
+                progArgs.getAcceptedValue('test', { name: 'option-arg1', acceptOnly: ['a'] })
             }).to.throw(RuntimeError)
-            var value = progArgs.getAcceptedValue('test', { name: 'option-arg1', acceptOnly:['a'], value:'test' })
+            var value = progArgs.getAcceptedValue('test', { name: 'option-arg1', acceptOnly: ['a'], value: 'test' })
             expect(value).to.equal('test')
         })
     })
@@ -119,8 +118,8 @@ describe('Program Args', () => {
             var collection = new ParamCollection()
             collection.addByConfig([{ name: 'my-param1' }, { name: 'my-param2' }])
             var param = await progArgs.createParamsMap(collection)
-            expect(param.myParam1).to.equal('arg2')
-            expect(param.myParam2).to.equal('arg4')
+            expect(param.myParam1).to.equal('arg1')
+            expect(param.myParam2).to.equal('arg2')
         })
     })
 

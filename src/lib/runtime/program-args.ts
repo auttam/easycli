@@ -1,7 +1,7 @@
-import { SettingStore } from './settings'
-import { OptionCollection, IOptionConfig } from './config/option-config';
-import { RuntimeError } from './errors/runtime-error';
-import { ParamCollection, ParamType, IParamConfig } from './config/param-config';
+import { SettingStore } from '../settings'
+import { OptionCollection, IOptionConfig } from '../config/option-config';
+import { RuntimeError } from '../errors/runtime-error';
+import { ParamCollection, ParamType, IParamConfig } from '../config/param-config';
 const minimist = require('minimist')
 
 
@@ -9,13 +9,13 @@ const minimist = require('minimist')
  *  params and options for the program */
 export class ProgramArgs {
     /** first supplied argument if commands are enabled */
-    public commandName: string = ''
+    private commandName: string = ''
 
     /** list of non-option arguments */
-    public params: string[] = []
+    private params: string[] = []
 
     /** object containing supplied options */
-    public options: any = null
+    private options: any = null
 
     /** All arguments supplied to the program */
     private suppliedArgs: string[] = []
@@ -30,7 +30,7 @@ export class ProgramArgs {
 
     /** Reads and parses supplied arguments from command line*/
     read(argv?: string[]) {
-        
+
         // parsing raw arguments
         if (argv && Array.isArray(argv)) {
             this.suppliedArgs = argv.slice(SettingStore.processArgvStartIndex)
@@ -58,6 +58,21 @@ export class ProgramArgs {
         this.options = this.parsedArgs
     }
 
+    /** gets first supplied argument if commands are enabled */
+    getCommandName() {
+        return this.commandName
+    }
+
+    /** gets list of non-option arguments supplied to the program */
+    getParams() {
+        return this.params
+    }
+
+    /** gets object containing supplied options */
+    getOptions() {
+        return this.options
+    }
+
     /** Checks whether any option supplied to the program */
     optionsProvided() {
         return !!Object.keys(this.options).length
@@ -77,6 +92,11 @@ export class ProgramArgs {
 
         // options not present
         return false
+    }
+
+    /** Gets all supplied arguments in raw form */
+    toArray() {
+        return this.suppliedArgs
     }
 
     /** Creates a map for all defined options that are supplied to the program */
@@ -177,10 +197,6 @@ export class ProgramArgs {
             mappedParams[paramInfo.propName] = this.getAcceptedValue(mappedParams[paramInfo.propName], paramInfo)
         }
         return mappedParams
-    }
-
-    supplied() {
-        return this.suppliedArgs
     }
 
     getAcceptedValue(value: string | string[], infoObject?: IParamConfig | IOptionConfig): void | string | string[] {
