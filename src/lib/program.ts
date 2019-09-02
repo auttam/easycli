@@ -1,6 +1,6 @@
 import { updateStore, ISettings, SettingStore } from './settings'
 import { ProgramConfiguration, IProgramConfig } from './config/program-config'
-import * as Runtime from './runtime'
+import * as Runtime from './runtime/main'
 import { RuntimeError } from './errors/runtime-error'
 
 import * as Help from './help'

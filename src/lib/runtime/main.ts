@@ -1,9 +1,8 @@
-import * as Help from './help'
-import { SettingStore } from './settings';
-import { RuntimeError } from './errors/runtime-error';
+import * as Help from '../help'
+import { SettingStore } from '../settings';
+import { RuntimeError } from '../errors/runtime-error';
 import { ProgramArgs } from './program-args';
-import { OptionCollection } from './config/option-config';
-import { ParamCollection, ParamType } from './config/param-config';
+import { ParamCollection, ParamType } from '../config/param-config';
 
 // flag: sets when 'read' is performed 
 var isReadingDone = false
@@ -113,7 +112,7 @@ export async function runProgram(program: any) {
 
     // 2a. Show program or command help when --help option is supplied
     if (SettingStore.enableHelpOption && programArgs.containsOption(['help', 'h'])) {
-        return Help.command(program.config, programArgs.commandName)
+        return Help.command(program.config, programArgs.getCommandName())
     }
 
     // 2b. Show program version when --version option is supplied
@@ -144,7 +143,7 @@ export async function runProgram(program: any) {
     // 1. programOptions are defined AND 
     // 2. program commands are enabled AND
     // 3. command name is empty OR program options have more priority than command options
-    if (Object.keys(programOptions).length > 1 && SettingStore.enableCommands && (!programArgs.commandName || SettingStore.prioritizeProgramOptions === true)) {
+    if (Object.keys(programOptions).length > 1 && SettingStore.enableCommands && (!programArgs.getCommandName() || SettingStore.prioritizeProgramOptions === true)) {
         return callback(program, 'onProgramOption', await programArgs.createParamsMap(), programOptions)
     }
     // 3c. otherwise treat all options as command options and pass to command method
@@ -172,7 +171,7 @@ export async function runProgram(program: any) {
     // 5. Handle Program's Command mode
 
     // Get requested command
-    var reqCommandName = programArgs.commandName || program.config.defaultCommand
+    var reqCommandName = programArgs.getCommandName() || program.config.defaultCommand
 
     // Show help if requested command name is missing 
     if (!reqCommandName && SettingStore.showHelpOnNoCommand) {

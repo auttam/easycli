@@ -192,7 +192,7 @@ describe('Program Configuration Class', () => {
             })
         })
 
-        it('replaces auto generated params', () => {
+        it('replaces auto generated params except property name', () => {
             var config = new ProgramConfiguration()
             config.readFromObject(new SampleProgram())
             expect(config.params.toArray()[0]).to.include({ name: 'param1', propName: 'param1', help: '' })
@@ -202,12 +202,12 @@ describe('Program Configuration Class', () => {
                 ]
             })
             expect(config.params.toArray()[0]).to.include({ name: 'param1', propName: 'param1', help: 'h1' })
-            config.merge({
+
+            expect(() => config.merge({
                 params: [
-                    { name: 'param1', propName:'prop1' }
+                    { name: 'param1', propName: 'prop1' }
                 ]
-            })
-            expect(config.params.toArray()[0]).to.include({ name: 'param1', propName: 'param1', help: 'h1' })
+            })).to.throw(ConfigurationError)
         })
     })
 })
