@@ -1,4 +1,3 @@
-import { Config } from "../config/base-config";
 
 export interface IMergeOptions { copyFunctions?: boolean, copyEmpty?: boolean, throwTypeError?: boolean, ignoreProps?: any[] }
 
@@ -23,7 +22,7 @@ export function mergeTypeSafe(target: any, source: any, options: IMergeOptions =
         if (typeof propSource == 'function' && !options.copyFunctions) return
 
         // don't copy if target doesn't have the property
-        if (typeof propTarget == "undefined") return
+        if (typeof propTarget == 'undefined') return
 
         // verify array
         if (Array.isArray(propTarget)) {
@@ -64,7 +63,7 @@ const STRIP_COMMENTS = /((\/\/.*$)|(\/\*[\s\S]*?\*\/))/mg;
 const ARGUMENT_NAMES = /([^\s,]+)/g;
 /** Gets names of method parameters */
 export function getParameters(func: any) {
-    let fnStr = (typeof func == "string" ? func : func.toString()).replace(STRIP_COMMENTS, '');
+    let fnStr = (typeof func == 'string' ? func : func.toString()).replace(STRIP_COMMENTS, '');
     let result = fnStr.slice(fnStr.indexOf('(') + 1, fnStr.indexOf(')')).match(ARGUMENT_NAMES);
     if (result === null)
         result = [];

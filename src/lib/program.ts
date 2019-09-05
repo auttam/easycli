@@ -11,7 +11,6 @@ export class Program {
 
     // Initialization:
     constructor(configuration?: IProgramConfig) {
-
         // setting 'config' with new or already injected configuration object
         this.config = ProgramConfiguration.injectConfiguration(this)
 
@@ -21,64 +20,42 @@ export class Program {
         // Sealing the configuration object
         Object.seal(this.config)
 
-        // initializing runtime
-        Runtime.init()
+        //
+        // Validating start index for reading command line arguments
 
-    }
-
-    static settings(settings: ISettings) {
-        updateStore(settings)
-    }
-
-    // Startup:
-    public start() {
-        var self: Program = this
-
-        // check if a program is already running
-        if (Runtime.running()) {
-            throw new RuntimeError('Cannot run program again when it is already in running state')
+        // checking startIndex must be a number 
+        if (SettingStore.processArgvStartIndex && isNaN(SettingStore.processArgvStartIndex)) {
+            throw new RuntimeError('Cannot read command line arguments, invalid index', SettingStore.processArgvStartIndex)
         }
 
-        // Attach handler to unhandled Rejections event
-        Runtime.handleRejections(SettingStore.rejectionHandler)
-
-        // Run program and wait for the promise resolution
-        var promise = Runtime.runProgram(self)
-
-        // Handling rejected promise
-        promise.catch(async (err: any) => {
-
-            // Printing error
-            if (typeof err == 'string') err = 'Error: ' + err
-            console.error(err)
-
-            // exiting with error
-            Runtime.exitProgram(self, 1)
-        })
-
-        // Handling on resolved promise
-        promise.then(async () => {
-            // existing without error
-            Runtime.exitProgram(self)
-        })
-    }
-
-    /** Runs a command manually */
-    protected runCommand(commandName: string) {
-        return Runtime.runCommand(this, commandName)
+        // startIndex must be greater than equal to 2
+        if (!SettingStore.processArgvStartIndex || SettingStore.processArgvStartIndex < 2) {
+            throw new RuntimeError('Index to start read command line arguments from must be greater than equal to 2', SettingStore.processArgvStartIndex)
+        }
     }
 
     /** Shows program or command help */
-    protected help(commandName?: string) {
+    public showHelp(commandName?: string) {
         if (commandName) {
             return Help.command(this.config, commandName)
         }
-        return Help.program(this.config) // call Help.program
+        return Help.program(this.config)
     }
 
-    /** Exits program and ends the current process  */
-    protected exit(code?: number) {
-        Runtime.exitProgram(code)
+    /** displays program version info */
+    public showVersion() {
+        return Help.version(this.config)
+    }
+
+    /** Runs the target program */
+    static async run(target: Program) {
+        var context = Runtime.createContext(target, Program)
+        return Runtime.runProgram(target, context)
+    }
+
+    /** allows updating global settings */
+    static settings(settings: ISettings) {
+        updateStore(settings)
     }
 }
 

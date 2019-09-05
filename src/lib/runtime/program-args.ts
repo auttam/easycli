@@ -1,7 +1,7 @@
 import { SettingStore } from '../settings'
-import { OptionCollection, IOptionConfig } from '../config/option-config';
-import { RuntimeError } from '../errors/runtime-error';
-import { ParamCollection, ParamType, IParamConfig } from '../config/param-config';
+import { OptionCollection, IOptionConfig } from '../config/option-config'
+import { RuntimeError } from '../errors/runtime-error'
+import { ParamCollection, ParamType, IParamConfig } from '../config/param-config'
 const minimist = require('minimist')
 
 

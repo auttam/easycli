@@ -1,8 +1,6 @@
 import { ICommandDefinition } from './types'
 import { ProgramConfiguration } from '../config/program-config'
 import { Command } from '../config/command-config'
-import { ConfigurationError } from '../errors/config-error';
-import { hyphenate } from '../utility/string'
 import { SettingStore } from '../settings'
 
 

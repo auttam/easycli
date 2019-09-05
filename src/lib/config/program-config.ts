@@ -5,7 +5,7 @@ import { ParamCollection, IParamConfig } from './param-config'
 import { hyphenate, separateWords } from '../utility/string'
 import { getOwnFunctions } from '../utility/reflection'
 import { SettingStore } from '../settings'
-import { ConfigurationError } from '../errors/config-error';
+import { ConfigurationError } from '../errors/config-error'
 
 export interface IProgramConfig {
     /** name of the program / cli */

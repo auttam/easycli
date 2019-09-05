@@ -1,10 +1,10 @@
 import { EOL } from 'os'
-import { IProgramConfig, ProgramConfiguration } from './config/program-config';
-import { SettingStore } from './settings';
-import { RuntimeError } from './errors/runtime-error';
-import { Command, CommandCollection } from './config/command-config';
-import { OptionCollection } from './config/option-config';
-import { ParamCollection } from './config/param-config';
+import { IProgramConfig, ProgramConfiguration } from './config/program-config'
+import { SettingStore } from './settings'
+import { RuntimeError } from './errors/runtime-error'
+import { Command, CommandCollection } from './config/command-config'
+import { OptionCollection } from './config/option-config'
+import { ParamCollection } from './config/param-config'
 const stringWidth = require('string-width')
 
 var defaultLeftIndent = 3
@@ -297,6 +297,9 @@ function print(config: any, commandName?: string) {
 
     // Show command help, If command name is present 
     if (commandName) {
+        if (commandName.toLowerCase() == 'help') {
+            return programHelp(config)
+        }
         return commandHelp(config, commandName)
     }
 

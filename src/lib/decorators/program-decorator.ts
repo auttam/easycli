@@ -1,6 +1,5 @@
 import { ProgramConfiguration } from '../config/program-config'
 import { IProgramDefinition } from './types'
-import { ConfigurationError } from '../errors/config-error'
 import { RuntimeError } from '../errors/runtime-error'
 
 /**

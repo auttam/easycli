@@ -1,4 +1,4 @@
-import { mergeTypeSafe } from "./utility/reflection";
+import { mergeTypeSafe } from './utility/reflection'
 
 // Default program event names
 var _programEvents = ['onInvalidCommand', 'onExit', 'onProgramOption']
@@ -13,7 +13,7 @@ interface RejectionHandlerType { (reason: string, promise?: any): void }
 export interface ISettings {
     /** name of the main method to call when program is running in no-command mode*/
     mainMethod?: string
-    /** global rejection handler for 'unhandledRejection' event of the proccess */
+    /** global rejection handler for 'unhandledRejection' event of the process */
     rejectionHandler?: RejectionHandlerType,
     /** index from where minimist should start parsing command line arguments */
     processArgvStartIndex?: number,
@@ -43,10 +43,10 @@ export interface ISettings {
 
 export const SettingStore: ISettings = {
     /** name of the main method to call when program is running in no-command mode*/
-    mainMethod: "main",
+    mainMethod: 'main',
 
-    /** global rejection handler for 'unhandledRejection' event of the proccess */
-    rejectionHandler: (reason: string, promise?: any) => { },
+    /** global rejection handler for 'unhandledRejection' event of the process */
+    rejectionHandler: (reason: string, promise?: any) => { console.error(reason) },
 
     /** index from where minimist should start parsing command line arguments */
     processArgvStartIndex: 2,

@@ -1,48 +1,15 @@
-import * as Help from '../help'
-import { SettingStore } from '../settings';
-import { RuntimeError } from '../errors/runtime-error';
-import { ProgramArgs } from './program-args';
-import { ParamCollection, ParamType } from '../config/param-config';
-
-// flag: sets when 'read' is performed 
-var isReadingDone = false
+import { SettingStore } from '../settings'
+import { RuntimeContext, RuntimeStates } from './context'
+import { ProgramConfiguration } from '../config/program-config'
 
 /** flag: sets when unhandled rejection handler is attached to the process event */
 var rejectionHandlerAttached = false
 
-/** flag: sets when a program is running  */
-var programRunning = false
+/** name of the property that stores context id in the program object */
+const contextPropertyName = '__contextID'
 
-/** Current iteration for runCommand method */
-var commandIteration = 0
-var maxCommandIteration = 2
-
-/** Initializing Program Arguments */
-const programArgs = new ProgramArgs()
-
-/** Initializes runtime */
-export function init() {
-
-    // re-setting runCommand() iteration counter
-    commandIteration = 0
-
-    // re-setting programRunning state
-    programRunning = false
-
-    //
-    // Validating start index for reading command line arguments
-
-    // checking startIndex must be a number 
-    if (SettingStore.processArgvStartIndex && isNaN(SettingStore.processArgvStartIndex)) {
-        throw new RuntimeError('Cannot read command line arguments, invalid index', SettingStore.processArgvStartIndex)
-    }
-
-    // startIndex must be greater than equal to 2
-    if (!SettingStore.processArgvStartIndex || SettingStore.processArgvStartIndex < 2) {
-        throw new RuntimeError('Index to start read command line arguments from must be greater than equal to 2', SettingStore.processArgvStartIndex)
-    }
-
-}
+/** Container storing created contexts by program's class names */
+const contextContainer: { [key: string]: RuntimeContext } = {}
 
 /** Attaches event handler once to process' unhandled rejection event */
 export function handleRejections(handler: any) {
@@ -52,215 +19,133 @@ export function handleRejections(handler: any) {
     }
 }
 
-/** Calls a method of a program if exists */
-async function callback(program: any, methodName: string, ...details: any[]) {
-    if (program && program[methodName] && typeof program[methodName] == 'function') {
-        return program[methodName].apply(program, details)
+/** Validates target to be be a program instance of same type as specified via type argument */
+function validateProgram(target: any) {
+    if (!target) {
+        throw new TypeError('Unable to create runtime context, target program is null')
+    }
+    if (!target.constructor) {
+        throw new TypeError('Unable to create runtime context, constructor is missing')
+    }
+    if (!target.constructor.name) {
+        throw new TypeError('Unable to create runtime context, constructor name missing')
+    }
+    if (target.constructor.name == 'Program') {
+        throw new TypeError('Unable to create runtime context, target program is not derived from Program Class')
     }
 }
 
-/** gets an array of arguments that can be applied to a method */
-function createMethodArgs(collection: ParamCollection, $params: any, $options: any) {
-    var args = []
-    for (var param of collection.getItems()) {
-        args[param.$idx] = $params[param.propName]
+/** creates a context if not already created, checks if program is already running */
+export function createContext(target: any, type: any): RuntimeContext {
+
+    // validate target is a valid program of type as specified
+    validateProgram(target)
+
+    // validate target to be instance of class specified by type
+    if ((target instanceof type) == false) {
+        throw new TypeError('Unable to create runtime context, target program is not an instance of Program Class')
     }
-    if (collection.indexParamsParam) {
-        args[collection.indexParamsParam] = $params
+
+    if (target.constructor[contextPropertyName]) {
+        throw new TypeError('Unable to create runtime context, context already created')
     }
-    if (collection.indexOptionsParam) {
-        args[collection.indexOptionsParam] = $options
-    }
-    return args
+
+    // creating new context
+    var context = new RuntimeContext(target)
+
+    // stamping context id to target's constructor
+    target.constructor[contextPropertyName] = target.constructor.name + context.contextId
+
+    // adding context to context container
+    contextContainer[target.constructor[contextPropertyName]] = context
+
+    // returning context
+    return context
 }
 
-/** Checks Whether a program is already running */
-export function running() {
-    return programRunning
+/** gets context for the program **/
+export function getContext(target: any) {
+    // validate target is a valid program of type as specified
+    validateProgram(target)
+
+    if (!target.constructor[contextPropertyName]) {
+        throw new TypeError('Unable to get execution context, context not created')
+    }
+
+    return contextContainer[target.constructor[contextPropertyName]]
 }
 
-/** Starts a program */
-export async function runProgram(program: any) {
+/** runs a program */
+export async function runProgram(program: any, context?: RuntimeContext) {
 
-    // set program running state 
-    programRunning = true
+    // Attach handler to unhandled Rejections event
+    handleRejections(SettingStore.rejectionHandler)
 
-    // validate program object
-    if (!program) throw new RuntimeError('Unable to run the program')
-    if (!program.config) throw new RuntimeError('Unable to run the program, program configuration missing')
+    // getting context for the program
+    context = context || getContext(program)
 
-    // 1. Read all arguments supplied to the program
-    programArgs.read()
+    // 
+    // Type checking
 
-    // Show program help when no arguments are passed AND when any of nested condition is true
-    if (programArgs.isEmpty()) {
-
-        // Program is running in command mode
-        // AND 'showHelpOnNoCommand' is enabled
-        if (SettingStore.enableCommands && SettingStore.showHelpOnNoCommand) {
-            return Help.program(program.config)
-        }
-
-        // Program is running in no-command mode
-        // AND program params doesn't contain any required param
-        if (!SettingStore.enableCommands && program.config.params.containsRequired()) {
-            return Help.program(program.config)
-        }
+    // check if context is present
+    if (!context) {
+        throw new TypeError('Cannot run program, context missing')
     }
 
-    // 2. Handle global options
-
-    // 2a. Show program or command help when --help option is supplied
-    if (SettingStore.enableHelpOption && programArgs.containsOption(['help', 'h'])) {
-        return Help.command(program.config, programArgs.getCommandName())
+    // check if context belongs to program
+    if (!program.constructor[contextPropertyName]
+        || program.constructor[contextPropertyName].indexOf(context.contextId) < 0) {
+        throw new TypeError('Cannot run program, context mismatch')
     }
 
-    // 2b. Show program version when --version option is supplied
-    if (SettingStore.enableVersionOption && programArgs.containsOption(['version', 'ver', 'v'])) {
-        return Help.version(program.config)
+    // check if a program is not in created state
+    if (context.state != RuntimeStates.CREATED) {
+        throw new TypeError('Cannot run program due to incorrect program state')
     }
 
-    // 3. Handle Program Options
+    // check if program is missing configuration
+    if (!program.config || !(program.config instanceof ProgramConfiguration)) {
+        throw new SyntaxError('Cannot run program, configuration missing')
+    }
 
-    // 3a. create program options map
-    var programOptions = {}
+    //
+    // Program execution
+
+    // [1]
+    // initialize runtime context
+    context.init()
+
+    // [2]
+    // handle global help 
+    if (context.helpRequested) {
+        return program.showHelp(context.requestedCommand)
+    }
+    // in case of SettingStore.enableHelpOption and/or SettingStore.enableHelpCommand set to false
+    // --help option will be treated as command/program option and 'help' will be treated as command
+    // or program parameter value
+
+    // [3]
+    // handle global version options (--version, --ver or -v) 
+    if (context.versionRequested) {
+        return program.showVersion()
+    }
+
+    // [4]
+    // execute main() or command method
+    var sendBackValue, exitCode = 0
     try {
-        programOptions = await programArgs.createOptionsMap(program.config.options)
-    }
-    catch (ex) {
-        // Show program help when there is a runtime error reading program options AND
-        // global setting showHelpOnInvalidOptions is set
-        if (SettingStore.showHelpOnInvalidOptions) {
-            console.error(ex.message)
-            return Help.program(program.config)
-        }
-
-        // Otherwise re-throwing exception
-        throw ex
-    }
-
-    // 3b. call 'onProgramOptions' when - 
-    // 1. programOptions are defined AND 
-    // 2. program commands are enabled AND
-    // 3. command name is empty OR program options have more priority than command options
-    if (Object.keys(programOptions).length > 1 && SettingStore.enableCommands && (!programArgs.getCommandName() || SettingStore.prioritizeProgramOptions === true)) {
-        return callback(program, 'onProgramOption', await programArgs.createParamsMap(), programOptions)
-    }
-    // 3c. otherwise treat all options as command options and pass to command method
-
-    // 4. Handle Program's no-Command mode
-    if (!SettingStore.enableCommands && SettingStore.mainMethod) {
-        try {
-            // 4a. create param map for program
-            var programParams = await programArgs.createParamsMap(program.config.params)
-
-            // 4b. call program's main method
-            return callback(program, SettingStore.mainMethod, ...createMethodArgs(program.config.params, programParams, programOptions))
-        } catch (ex) {
-
-            // Showing command help
-            if (SettingStore.showHelpOnInvalidParams) {
-                return Help.program(program.config)
-            }
-
-            // Otherwise re-throwing exception
-            throw ex
-        }
-    }
-
-    // 5. Handle Program's Command mode
-
-    // Get requested command
-    var reqCommandName = programArgs.getCommandName() || program.config.defaultCommand
-
-    // Show help if requested command name is missing 
-    if (!reqCommandName && SettingStore.showHelpOnNoCommand) {
-        return Help.program(program.config)
-    }
-
-    // otherwise run command
-    return runCommand(program, reqCommandName)
-}
-
-/** Runs a program command */
-export async function runCommand(program: any, reqCommandName: string) {
-    commandIteration++
-
-    // Show command help when command name is 'help'
-    if (reqCommandName == 'help' && SettingStore.enableHelpCommand) {
-        return Help.program(program.config)
-    }
-
-    // Get command definition object for the requested command name
-    var command = program.config.commands.getByName(reqCommandName)
-
-    // Handle invalid command / command not found
-    if (!command) {
-        // show help if enabled
-        if (SettingStore.showHelpOnNoCommand) {
-            return Help.program(program.config)
-        }
-
-        // otherwise if maxCommandIteration is not reached, call onInvalidCommand methods
-        if (commandIteration <= maxCommandIteration) {
-            return callback(program, 'onInvalidCommand', reqCommandName, await programArgs.createParamsMap(), await programArgs.createOptionsMap())
-        }
-
-        // finally show program help
-        return Help.program(program.config)
-    }
-
-    // otherwise, proceed further to execute the command
-
-    // create command params map object
-    var params: any = {}
-    try {
-        params = await programArgs.createParamsMap(command.params)
-    }
-    catch (ex) {
-        // show help if enabled
-        if (SettingStore.showHelpOnInvalidParams) {
-            return Help.command(program.config, reqCommandName)
-        }
-
-        // Otherwise re-throwing exception
-        throw ex
-    }
-
-    // create command options map object
-    var options = {}
-    try {
-        options = await programArgs.createOptionsMap(command.options)
-    }
-    catch (ex) {
-        // Show command help if enabled
-        if (SettingStore.showHelpOnInvalidOptions) {
-            return Help.command(program.config, reqCommandName)
-        }
-
-        // Otherwise re-throwing exception
-        throw ex
-    }
-
-    // finally execute the command
-    //   var a = command.params.createMap(params, options)
-    return callback(program, command.methodName, ...createMethodArgs(command.params, params, options))
-
-}
-
-/** Exits the program. If exitProcess is set, exits the process manually */
-export function exitProgram(program: any, exitCode: number = 0, exitProcess = false) {
-
-    callback(program, 'onExit', exitCode).then(newExitCode => {
-        process.exitCode = typeof newExitCode == 'undefined' ? exitCode : newExitCode
-        if (exitProcess) {
-            process.exit()
-        }
-    }).catch(err => {
+        // execute program
+        sendBackValue = await context.runProgram()
+    } catch (err) {
+        // Printing error
+        if (typeof err == 'string') err = 'Error: ' + err
         console.error(err)
-        if (exitProcess) {
-            process.exit()
-        }
-    })
 
+        // setting error as send back
+        sendBackValue = err
+        exitCode = 1
+    }
+
+    // existing 
+    return await context.exitProgram(sendBackValue, exitCode)
 }
