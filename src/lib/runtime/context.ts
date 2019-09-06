@@ -101,10 +101,10 @@ export class RuntimeContext {
         for (var param of collection.getItems()) {
             args[param.$idx] = $params[param.propName]
         }
-        if (collection.indexParamsParam) {
+        if (collection.indexParamsParam > -1) {
             args[collection.indexParamsParam] = $params
         }
-        if (collection.indexOptionsParam) {
+        if (collection.indexOptionsParam > -1) {
             args[collection.indexOptionsParam] = $options
         }
         return args
@@ -243,88 +243,15 @@ export class RuntimeContext {
         }
 
         //  execute the command
-        var $params = await this.mapParams(this._program.config.params)
-        var $options = await this.mapOptions(this._program.config.options)
+        var $params = await this.mapParams(command.params)
+        var $options = await this.mapOptions(command.options)
         return this.call(command.propName, ...this.createMethodArgs(command.params, $params, $options))
 
     }
 
     /** ends target program */
-    public exitProgram(sendBac: any, exitCode: number = 0) {
+    public exitProgram(error: any, executionResult: any, exitCode: number = 0) {
         this.validateProgram()
+        return this.call('onExit', error, executionResult, exitCode)
     }
 }
-
-
-
-
-
-
-
-
-//     runCommand(program: any, reqCommandName: string) {
-//         this.commandIteration++
-
-
-//         // Get command definition object for the requested command name
-//         var command = program.config.commands.getByName(reqCommandName)
-
-//         // Handle invalid command / command not found
-//         if (!command) {
-
-//             // show help if enabled
-//             if (SettingStore.showHelpOnNoCommand) {
-//                 return program.showHelp(program.config)
-//             }
-
-//             // otherwise if _maxCommandIteration is not reached, call onInvalidCommand methods
-//             if (commandIteration <= _maxCommandIteration) {
-//                 return call(program, 'onInvalidCommand', reqCommandName, await programArgs.createParamsMap(), await programArgs.createOptionsMap())
-//             }
-
-//             // finally show program help
-//             return Help.program(program.config)
-//         }
-
-//         // otherwise, proceed further to execute the command
-
-//         // create command params map object
-//         var params: any = {}
-//         try {
-//             params = await programArgs.createParamsMap(command.params)
-//         }
-//         catch (ex) {
-//             // show help if enabled
-//             if (SettingStore.showHelpOnInvalidParams) {
-//                 return Help.command(program.config, reqCommandName)
-//             }
-
-//             // Otherwise re-throwing exception
-//             throw ex
-//         }
-
-//         // create command options map object
-//         var options = {}
-//         try {
-//             options = await programArgs.createOptionsMap(command.options)
-//         }
-//         catch (ex) {
-//             // Show command help if enabled
-//             if (SettingStore.showHelpOnInvalidOptions) {
-//                 return Help.command(program.config, reqCommandName)
-//             }
-
-//             // Otherwise re-throwing exception
-//             throw ex
-//         }
-
-//         // finally execute the command
-//         //   var a = command.params.createMap(params, options)
-//         return call(program, command.methodName, ...createMethodArgs(command.params, params, options))
-
-//     }
-
-//     exit(sendBack: any, exitCode: number = 0) {
-
-//     }
-// }

@@ -132,20 +132,20 @@ export async function runProgram(program: any, context?: RuntimeContext) {
 
     // [4]
     // execute main() or command method
-    var sendBackValue, exitCode = 0
+    var error, executionResult, exitCode = 0
     try {
         // execute program
-        sendBackValue = await context.runProgram()
+        executionResult = await context.runProgram()
     } catch (err) {
         // Printing error
         if (typeof err == 'string') err = 'Error: ' + err
         console.error(err)
 
         // setting error as send back
-        sendBackValue = err
+        error = err
         exitCode = 1
     }
 
     // existing 
-    return await context.exitProgram(sendBackValue, exitCode)
+    return await context.exitProgram(error, executionResult, exitCode)
 }
