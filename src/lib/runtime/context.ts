@@ -188,7 +188,7 @@ export class RuntimeContext {
             }
 
             // handle situation when options are set but not parameters
-            if (!this._progArgs.getCommandName()) {
+            if (!this._requestedCommand) {
                 return this.callDefaultCommand()
             }
 
@@ -213,7 +213,7 @@ export class RuntimeContext {
                 }
             }
             // proceed further to run the command
-            return this.runCommand(this._progArgs.getCommandName())
+            return this.runCommand(this._requestedCommand)
         }
 
     }
@@ -252,6 +252,9 @@ export class RuntimeContext {
     /** ends target program */
     public exitProgram(error: any, executionResult: any, exitCode: number = 0) {
         this.validateProgram()
-        return this.call('onExit', error, executionResult, exitCode)
+        if (typeof exitCode != 'undefined') {
+            process.exitCode = exitCode
+        }
+        return this.call('onExit', error, executionResult)
     }
 }
