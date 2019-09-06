@@ -241,7 +241,9 @@ function programHelp(config: ProgramConfiguration) {
         printOptionList(config.options)
     }
 
-    console.log(commandHelpHint)
+    if (commandHelpHint) {
+        console.log(commandHelpHint)
+    }
 
     // print global help and options
     var globalHelp = []
