@@ -72,7 +72,7 @@ describe('No-Command Mode', () => {
             expect(_b).to.equal(2)
             expect(_c).to.equal(3)
             expect(_p._).to.eql([1, 2, 3, 4])
-            expect(_o.isSet('x')).to.equal(true)
+            expect(_o.$isSet('x')).to.equal(true)
 
         })
 

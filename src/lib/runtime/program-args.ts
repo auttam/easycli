@@ -104,7 +104,7 @@ export class ProgramArgs {
 
         var mappedOptions: any = {
             /** checks whether option is present or not and return trues for both --option and --no-option */
-            contains: function (names: string | string[]) {
+            $contains: function (names: string | string[]) {
                 if (!names) return false
                 names = Array.isArray(names) ? names : [names]
                 for (var name of names) {
@@ -113,7 +113,7 @@ export class ProgramArgs {
                 }
             },
             /** check whether option is present with truthy value and return true for only --option*/
-            isSet: function (...names: string[]) {
+            $isSet: function (...names: string[]) {
                 if (!names) return false
                 names = Array.from(names)
                 for (var name of names) {
@@ -122,7 +122,7 @@ export class ProgramArgs {
                 }
             },
             /** gets the value of options */
-            get: function (name: string) {
+            $get: function (name: string) {
                 if (this.hasOwnProperty(name)) return this[name]
                 if (this._.hasOwnProperty(name)) return this._[name]
             }
@@ -161,13 +161,23 @@ export class ProgramArgs {
                 mappedOptions[optionInfo.propName] = value
             }
         }
-        return mappedOptions
+        return Object.seal(mappedOptions)
     }
 
     /** Creates a map for all defined params that are supplied to the program */
     async  createParamsMap(definedParams?: ParamCollection) {
         // object containing parameters mapped to supplied argument
-        var mappedParams: any = {}
+        var mappedParams: any = {
+            /** checks whether parameter is present or not */
+            $contains: function (names: string | string[]) {
+                if (!names) return false
+                names = Array.isArray(names) ? names : [names]
+                for (var name of names) {
+                    if (this.hasOwnProperty(name)) return true
+                    if (this._.hasOwnProperty(name)) return true
+                }
+            }
+        }
 
         // assign all options to default '_' property
         mappedParams._ = Array.from(this.params)
@@ -179,9 +189,7 @@ export class ProgramArgs {
 
         // first param to process
         var currentParamListIdx = 0
-
         for (var paramInfo of definedParams.getItems()) {
-
             // param name cannot be blank
             // following check is for bypass typescript type check
             if (!paramInfo.name) return
@@ -220,7 +228,7 @@ export class ProgramArgs {
             // getting allowed value
             mappedParams[paramInfo.propName] = this.getAcceptedValue(mappedParams[paramInfo.propName], paramInfo)
         }
-        return mappedParams
+        return Object.seal(mappedParams)
     }
 
     getAcceptedValue(value: string | string[], infoObject?: IParamConfig | IOptionConfig): void | string | string[] {

@@ -99,7 +99,9 @@ export class RuntimeContext {
     private createMethodArgs(collection: ParamCollection, $params: any, $options: any) {
         var args = []
         for (var param of collection.getItems()) {
-            args[param.$idx] = $params[param.propName]
+            if ($params.$contains(param.propName)) {
+                args[param.$idx] = $params[param.propName]
+            }
         }
         if (collection.indexParamsParam > -1) {
             args[collection.indexParamsParam] = $params
@@ -164,6 +166,10 @@ export class RuntimeContext {
             if (SettingStore.mainMethod && this._program[SettingStore.mainMethod]) {
                 var $params = await this.mapParams(this._program.config.params)
                 var $options = await this.mapOptions(this._program.config.options)
+
+                // if params and option are null that means there was an exception
+                // while creating map thus cannot execute method 
+                if (!$params || !$options) return
                 return this.call(SettingStore.mainMethod, ...this.createMethodArgs(this._program.config.params, $params, $options))
             }
 
@@ -204,6 +210,8 @@ export class RuntimeContext {
             if (this._program.config.options.length && SettingStore.prioritizeProgramOptions === true) {
 
                 var progOption = await this.mapOptions(this._program.config.options)
+                // if progOption is null, there was an exception cannot proceed further
+                if (!progOption) return
 
                 // check if supplied options got mapped with configured options
                 // note: option map will always have '_' property with all supplied options
@@ -245,6 +253,9 @@ export class RuntimeContext {
         //  execute the command
         var $params = await this.mapParams(command.params)
         var $options = await this.mapOptions(command.options)
+        // if params and option are null that means there was an exception
+        // while creating map thus cannot execute method 
+        if (!$params || !$options) return
         return this.call(command.propName, ...this.createMethodArgs(command.params, $params, $options))
 
     }
@@ -255,6 +266,10 @@ export class RuntimeContext {
         if (typeof exitCode != 'undefined') {
             process.exitCode = exitCode
         }
+        // re-throw error if onExit method is not implemented
+        if (error && !this._program['onExit']) throw error
+
+        // call onExit
         return this.call('onExit', error, executionResult)
     }
 }

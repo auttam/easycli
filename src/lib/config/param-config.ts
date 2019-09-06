@@ -24,7 +24,7 @@ export class Param extends Config implements IParamConfig {
     public type: ParamType = ParamType.SINGLE
     public required = false
     public acceptOnly: string[] = []
-    public value: string = ''
+    public value: any
     /** parameter index in command or main method signature */
     public $idx: number = -1
 
@@ -32,7 +32,9 @@ export class Param extends Config implements IParamConfig {
         super(config)
         this.name = hyphenate(config.name)
         this.type = config.type || this.type
-        this.value = config.value || ''
+        if (config.value) {
+            this.value = config.value
+        }
         this.acceptOnly = Array.isArray(config.acceptOnly) ? config.acceptOnly : []
         this.required = !!config.required
 
@@ -87,7 +89,6 @@ export class ParamCollection extends Collection<Param>{
                 this.indexParamsParam = idx
                 continue
             }
-
             // get index for options paramter
             if (propName == '$options') {
                 this.indexOptionsParam = idx
@@ -177,14 +178,16 @@ export class ParamCollection extends Collection<Param>{
         }
     }
 
-    clear() {
+    clear(all?: boolean) {
         super.clear()
         this._listParam = ''
         this._optionalParam = ''
         this._requiredParam = ''
         this._propNames = {}
-        this.indexParamsParam = -1
-        this.indexOptionsParam = -1
+        if (all) {
+            this.indexParamsParam = -1
+            this.indexOptionsParam = -1
+        }
     }
 
     protected validate(item: Param) {
