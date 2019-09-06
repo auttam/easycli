@@ -139,7 +139,6 @@ export async function runProgram(program: any, context?: RuntimeContext) {
     } catch (err) {
         // Printing error
         if (typeof err == 'string') err = 'Error: ' + err
-        console.error(err)
 
         // setting error as send back
         error = err
