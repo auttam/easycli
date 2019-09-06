@@ -102,7 +102,31 @@ export class ProgramArgs {
     /** Creates a map for all defined options that are supplied to the program */
     async createOptionsMap(definedOptions?: OptionCollection) {
 
-        var mappedOptions: any = {}
+        var mappedOptions: any = {
+            /** checks whether option is present or not and return trues for both --option and --no-option */
+            contains: function (names: string | string[]) {
+                if (!names) return false
+                names = Array.isArray(names) ? names : [names]
+                for (var name of names) {
+                    if (this.hasOwnProperty(name)) return true
+                    if (this._.hasOwnProperty(name)) return true
+                }
+            },
+            /** check whether option is present with truthy value and return true for only --option*/
+            isSet: function (...names: string[]) {
+                if (!names) return false
+                names = Array.from(names)
+                for (var name of names) {
+                    if (this.hasOwnProperty(name) && this[name]) return true
+                    if (this._.hasOwnProperty(name) && this._[name]) return true
+                }
+            },
+            /** gets the value of options */
+            get: function (name: string) {
+                if (this.hasOwnProperty(name)) return this[name]
+                if (this._.hasOwnProperty(name)) return this._[name]
+            }
+        }
 
         // assign all options to default '_' property
         mappedOptions._ = Object.assign({}, this.options)

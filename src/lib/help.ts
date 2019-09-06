@@ -222,11 +222,13 @@ function programHelp(config: ProgramConfiguration) {
 
     // print program usage
     printProgramUsage(config)
+    var commandHelpHint = ''
 
     if (SettingStore.enableCommands) {
         // print command list
         if (config.commands.length) {
             printCommandList(config, config.commands)
+            commandHelpHint = '\nSee command help for more options'
         }
     } else {
         if (config.params.length) {
@@ -238,6 +240,8 @@ function programHelp(config: ProgramConfiguration) {
     if (config.options.length) {
         printOptionList(config.options)
     }
+
+    console.log(commandHelpHint)
 
     // print global help and options
     var globalHelp = []
