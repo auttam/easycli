@@ -1,6 +1,6 @@
-import { ConfigurationError } from '../errors'
+import { ConfigurationError } from '../errors/config-error'
 
-/** Represents a collection */
+/** Represents a Collection Class */
 export abstract class Collection<T> {
     private _collection = new Map()
 
@@ -10,7 +10,7 @@ export abstract class Collection<T> {
     }
 
     /** Gets item from collection using unique 'key' name */
-    protected get(key: string | Symbol): T {
+    public get(key: string | Symbol): T {
         return this._collection.get(key)
     }
 
@@ -24,7 +24,7 @@ export abstract class Collection<T> {
      * that matches the target. If propertyName is specified, it returns the first item 
      * and has a property that matches the propertyName and its value with the target
      */
-    protected find(target: any, propertyName?: string): T | void {
+    protected find(target: any, propertyName?: string) {
         // Search for the target
         for (var [key, item] of this._collection) {
             if (propertyName && typeof item == 'object' && item[propertyName] == target) {
@@ -38,7 +38,6 @@ export abstract class Collection<T> {
 
     /** Appends an item to the collection, using a 'key' */
     protected append(key: string | Symbol, item: T) {
-
         // Rule 1. Key must be present 
         if (!key) throw new ConfigurationError('Unable to add to collection, key cannot be null or empty')
 
@@ -50,17 +49,14 @@ export abstract class Collection<T> {
             throw new ConfigurationError('Unable to add to collection, Key already defined', key)
         }
 
-        // setting up item before adding
-        item = this.setupItem(item)
-
         // validating item before adding
-        if (this.validateItem(item) !== false) {
+        if (this.validate(item) !== false) {
 
             // adding item to the collection
             this._collection.set(key, item)
 
             // final tasks to do with item after add
-            this.finalizeItem(item)
+            this.itemAdded(item)
         }
     }
 
@@ -78,18 +74,20 @@ export abstract class Collection<T> {
             throw new ConfigurationError('Unable to update to collection, Key not found', key)
         }
 
-        // setting up item before adding
-        item = this.setupItem(item)
-
         // validating item before adding
-        if (this.validateItem(item) !== false) {
+        if (this.validate(item) !== false) {
 
             // adding item to the collection
             this._collection.set(key, item)
 
             // final tasks to do with item after add
-            this.finalizeItem(item)
+            this.itemAdded(item)
         }
+    }
+
+    /** Clears the collection */
+    protected clear() {
+        this._collection.clear()
     }
 
     /** Gets all items from the collection */
@@ -102,15 +100,14 @@ export abstract class Collection<T> {
         return this._collection.keys()
     }
 
-    /** A method called to setup item before it is added to the collection */
-    protected abstract setupItem(item: T): T
+    /** Converts values into array */
+    toArray(): T[] {
+        return Array.from(this.getItems())
+    }    
 
     /** A method to validate the item being added, must throw error or return false to cancel adding */
-    protected abstract validateItem(item: T): any
+    protected abstract validate(item: T): any
 
     /** A method called to after item is added, can be used to perform final tasks with the item added  */
-    protected abstract finalizeItem(item: T): void
-
-    /** A method for merging collection */
-    abstract merge(item: any): void
+    protected abstract itemAdded(item: T): void
 }

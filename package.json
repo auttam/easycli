@@ -6,7 +6,7 @@
   "scripts": {
     "build": "./node_modules/.bin/tsc",
     "start": "./node_modules/.bin/tsc --watch",
-    "test": "./node_modules/.bin/mocha"
+    "test": "./node_modules/.bin/mocha --recursive"
   },
   "repository": {
     "type": "git",

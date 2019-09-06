@@ -1,2 +1,2 @@
-export { programDecoratorFactory as CliProgram } from './program'
-export { commandDecoratorFactory as Command } from './command'
+export { programDecoratorFactory as Cli } from './program-decorator'
+export { commandDecoratorFactory as Command } from './command-decorator'

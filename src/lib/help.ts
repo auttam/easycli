@@ -1,17 +1,16 @@
-import { RuntimeError } from './types/errors'
-import { IProgramInfo, ICommandInfo } from './types/info-objects'
-import { ProgramConfiguration } from './program-config'
-import { Command, CommandCollection } from './types/collections/commands'
-import { OptionCollection } from './types/collections/options'
-import { ParamCollection } from './types/collections/params'
-import { GlobalSettings } from './global-settings'
 import { EOL } from 'os'
+import { IProgramConfig, ProgramConfiguration } from './config/program-config'
+import { SettingStore } from './settings'
+import { RuntimeError } from './errors/runtime-error'
+import { Command, CommandCollection } from './config/command-config'
+import { OptionCollection } from './config/option-config'
+import { ParamCollection } from './config/param-config'
 const stringWidth = require('string-width')
 
 var defaultLeftIndent = 3
 var defaultRightIndent = 3
 
-// Color and formatting consts
+// Color and formatting constants
 const BOLD = '\u001b[1m'
 const RESET = '\u001b[0m'
 const UNDERLINE = '\u001b[4m'
@@ -108,15 +107,15 @@ function printColumnar(columnCollection: string[][], options: { colWidth: number
 }
 
 /** Prints program information */
-function printProgramInfo(programInfo: IProgramInfo) {
+function printProgramInfo(programInfo: IProgramConfig) {
     // Program Name
     console.log()
     console.log(`${BOLD + UNDERLINE}${programInfo.name} v${programInfo.version}${RESET}`)
 
-    // Program description
-    if (programInfo.description) {
+    // Program help
+    if (programInfo.help) {
         console.log()
-        console.log(programInfo.description)
+        console.log(programInfo.help)
     }
 }
 
@@ -124,8 +123,8 @@ function printProgramInfo(programInfo: IProgramInfo) {
 function printProgramUsage(config: ProgramConfiguration) {
     console.log()
     var label = 'Usage: ' //BOLD + UNDERLINE + 'Usage: ' + RESET
-    if (GlobalSettings.enableCommands()) {
-        console.log(label + config.binaryName + (config.hasRealCommand() ? ' <command>' : '') + (config.options.length ? ' [options ...]' : ''))
+    if (SettingStore.enableCommands) {
+        console.log(label + config.binaryName + (config.commands.length ? ' <command>' : '') + (config.options.length ? ' [options ...]' : ''))
     } else {
         var usage = label + config.binaryName
         if (config.params.length) {
@@ -150,9 +149,7 @@ function printCommandList(config: ProgramConfiguration, commands: CommandCollect
 
     var columnCollection = []
     for (var command of commands.getItems()) {
-        // no need to include default command if it has default method name
-        if (command.methodName == GlobalSettings.defaultCommandMethod()) { continue }
-        columnCollection.push([command.commandName, command.description])
+        columnCollection.push([command.name, command.help])
     }
 
     // printing command list
@@ -169,10 +166,10 @@ function printOptionList(options: OptionCollection) {
     var columnCollection = []
     for (var option of options.getItems()) {
         var optionInfo = '--' + option.name
-        columnCollection.push(['--' + option.name, option.description || ''])
-        if (option.otherNames && Array.isArray(option.otherNames)) {
-            var otherNames = option.otherNames.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
-            columnCollection.push(['', 'Other Names: ' + otherNames])
+        columnCollection.push(['--' + option.name, option.help || ''])
+        if (option.aliases && Array.isArray(option.aliases)) {
+            var aliases = option.aliases.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
+            columnCollection.push(['', 'Other Names: ' + aliases])
         }
     }
     // printing command list
@@ -188,12 +185,12 @@ function printParamsList(params: ParamCollection) {
     console.log()
     var columnCollection = []
     for (var param of params.getItems()) {
-        var desc = param.description || ''
+        var desc = param.help || ''
         desc += param.required ? ' ' + BOLD + '(required)' + RESET : ''
         columnCollection.push([param.name || '', desc])
 
-        if (param.allowedValues && param.allowedValues.length) {
-            columnCollection.push(['', 'Possible Values: ' + param.allowedValues.join(', ')])
+        if (param.acceptOnly && param.acceptOnly.length) {
+            columnCollection.push(['', 'Possible Values: ' + param.acceptOnly.join(', ')])
         }
 
     }
@@ -204,9 +201,9 @@ function printParamsList(params: ParamCollection) {
 
 function printCommandUsage(config: ProgramConfiguration, command: Command) {
     console.log()
-    console.log(command.description)
+    console.log(command.help)
 
-    var usage = 'Usage: ' + config.binaryName + ' ' + command.commandName
+    var usage = 'Usage: ' + config.binaryName + ' ' + command.name
     if (command.params.length) {
         usage += ' [param ...]'
     }
@@ -221,15 +218,17 @@ function printCommandUsage(config: ProgramConfiguration, command: Command) {
 function programHelp(config: ProgramConfiguration) {
 
     // print program info
-    printProgramInfo(config.getInfo())
+    printProgramInfo(config.toConfig())
 
     // print program usage
     printProgramUsage(config)
+    var commandHelpHint = ''
 
-    if (GlobalSettings.enableCommands()) {
+    if (SettingStore.enableCommands) {
         // print command list
-        if (config.hasRealCommand()) {
+        if (config.commands.length) {
             printCommandList(config, config.commands)
+            commandHelpHint = '\nSee command help for more options'
         }
     } else {
         if (config.params.length) {
@@ -242,24 +241,26 @@ function programHelp(config: ProgramConfiguration) {
         printOptionList(config.options)
     }
 
+    console.log(commandHelpHint)
+
     // print global help and options
     var globalHelp = []
 
     // global help options
-    if (GlobalSettings.enableHelpCommand()) {
+    if (SettingStore.enableHelpCommand) {
         globalHelp.push([config.binaryName + ' --help, -h', 'To view help'])
-        if (config.hasRealCommand() && GlobalSettings.enableCommands()) {
+        if (config.commands.length && SettingStore.enableCommands) {
             globalHelp.push([config.binaryName + ' <command> --help, -h', 'To view command help'])
         }
     }
 
     // global version option
-    if (GlobalSettings.enableVersionOption()) {
+    if (SettingStore.enableVersionOption) {
         globalHelp.push([config.binaryName + ' --version, -v', 'To view help'])
     }
 
     // help command
-    if (GlobalSettings.enableHelpCommand() && GlobalSettings.enableCommands()) {
+    if (SettingStore.enableHelpCommand && SettingStore.enableCommands) {
         globalHelp.push([config.binaryName + ' help', 'To view help'])
     }
 
@@ -300,6 +301,9 @@ function print(config: any, commandName?: string) {
 
     // Show command help, If command name is present 
     if (commandName) {
+        if (commandName.toLowerCase() == 'help') {
+            return programHelp(config)
+        }
         return commandHelp(config, commandName)
     }
 
