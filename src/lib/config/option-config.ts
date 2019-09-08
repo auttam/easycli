@@ -9,20 +9,22 @@ export interface IOptionConfig extends IConfig {
     // values that are accepted for the option 
     acceptOnly?: string[]
     // default value, must be one of accepted values
-    value?: string
+    value?: string | number | boolean
 }
 
 /** Represents an Option */
 export class Option extends Config implements IOptionConfig {
 
     public acceptOnly: string[] = []
-    public value: string = ''
+    public value: undefined | string | number | boolean
     public aliases: string[] = []
 
     constructor(config: IOptionConfig) {
         super(config)
 
-        this.value = config.value || ''
+        if (config.value) {
+            this.value = config.value
+        }
         this.acceptOnly = Array.isArray(config.acceptOnly) ? config.acceptOnly : []
         this.aliases = config.aliases && Array.isArray(config.aliases) ? config.aliases : []
 

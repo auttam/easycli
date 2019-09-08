@@ -1,7 +1,5 @@
-import { exists } from "fs";
-
-const expect = require('chai').expect
-const Program = require('../../index').Program
+const expect = require('chai').expect;
+import { Program } from "../../index"
 
 /** tests execution of cli in no-command mode */
 
@@ -37,7 +35,7 @@ describe('No-Command Mode', () => {
 
             await Program.run(new SampleProgram())
             expect(injectedParams).to.not.be.null
-            expect(injectedParams).to.have.property("_")
+            expect(injectedParams).to.have.property("$unknown")
         })
 
         it('is injected with $options', async () => {
@@ -50,12 +48,12 @@ describe('No-Command Mode', () => {
 
             await Program.run(new SampleProgram())
             expect(injectedOptions).to.not.be.null
-            expect(injectedOptions).to.have.property("_")
+            expect(injectedOptions).to.have.property("$unknown")
         })
 
 
         it('receives parameters appropriately', async () => {
-            var _o: any = 0, _a = 0, _b = 0, _c = 0, _p:any = 0;
+            var _o: any = 0, _a = 0, _b = 0, _c = 0, _p: any = 0;
             process.argv = ['node', './', '1', '2', '3', '4', '--x']
             class SampleProgram extends Program {
                 main(a: any, $params: any, b: any, c: any, $options: any) {
@@ -67,13 +65,11 @@ describe('No-Command Mode', () => {
                 }
             }
             await Program.run(new SampleProgram())
-
             expect(_a).to.equal(1)
             expect(_b).to.equal(2)
             expect(_c).to.equal(3)
-            expect(_p._).to.eql([1, 2, 3, 4])
-            expect(_o.$isSet('x')).to.equal(true)
-
+            expect(_p.$unknown).to.eql([1, 2, 3, 4])
+            expect("x" in _o.$unknown).to.equal(true)
         })
 
         it('is called asynchronously', async () => {
@@ -128,8 +124,8 @@ describe('No-Command Mode', () => {
 
     })
 
-    it('', async () => {
+    // it('', async () => {
 
-    })
+    // })
 
 })

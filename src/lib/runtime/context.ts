@@ -99,7 +99,7 @@ export class RuntimeContext {
     private createMethodArgs(collection: ParamCollection, $params: any, $options: any) {
         var args = []
         for (var param of collection.getItems()) {
-            if ($params.$contains(param.propName)) {
+            if ($params.$has(param.propName)) {
                 args[param.$idx] = $params[param.propName]
             }
         }

@@ -1,7 +1,6 @@
 const expect = require('chai').expect
 import { Program } from '../../lib/program'
 import * as Runtime from '../../lib/runtime/main'
-import { RuntimeError } from '../../lib/errors/runtime-error';
 
 describe("Runtime Tests", () => {
 

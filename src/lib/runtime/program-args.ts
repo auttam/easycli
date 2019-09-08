@@ -4,6 +4,25 @@ import { RuntimeError } from '../errors/runtime-error'
 import { ParamCollection, ParamType, IParamConfig } from '../config/param-config'
 const minimist = require('minimist')
 
+// traps for mapped options and mapped params proxies
+var mappingTraps: any = {
+    // get trap
+    get(target: any, prop: string): any {
+        if (prop === '$has') {
+            return (...props: string[]) => {
+                if (!props) return false
+                for (var name of props) {
+                    if (target.hasOwnProperty(name)) return true
+                }
+                return false
+            }
+        }
+
+        // default target prop
+        return target[prop]
+    }
+}
+
 
 /** Class that contains all the supplied cli arguments categorized into command name, 
  *  params and options for the program */
@@ -101,43 +120,20 @@ export class ProgramArgs {
 
     /** Creates a map for all defined options that are supplied to the program */
     async createOptionsMap(definedOptions?: OptionCollection) {
+        var mappedOptions: any = {}
 
-        var mappedOptions: any = {
-            /** checks whether option is present or not and return trues for both --option and --no-option */
-            $contains: function (names: string | string[]) {
-                if (!names) return false
-                names = Array.isArray(names) ? names : [names]
-                for (var name of names) {
-                    if (this.hasOwnProperty(name)) return true
-                    if (this._.hasOwnProperty(name)) return true
-                }
-            },
-            /** check whether option is present with truthy value and return true for only --option*/
-            $isSet: function (...names: string[]) {
-                if (!names) return false
-                names = Array.from(names)
-                for (var name of names) {
-                    if (this.hasOwnProperty(name) && this[name]) return true
-                    if (this._.hasOwnProperty(name) && this._[name]) return true
-                }
-            },
-            /** gets the value of options */
-            $get: function (name: string) {
-                if (this.hasOwnProperty(name)) return this[name]
-                if (this._.hasOwnProperty(name)) return this._[name]
-            }
-        }
-
-        // assign all options to default '_' property
-        mappedOptions._ = Object.assign({}, this.options)
+        // assign all options to default '$unknown' property
+        mappedOptions.$unknown = Object.assign({}, this.options)
 
         // no need to proceed if definitions are missing
-        if (!definedOptions || !definedOptions.length) return mappedOptions
+        if (!definedOptions || !definedOptions.length) return new Proxy(mappedOptions, mappingTraps)
 
         // iterating over all defined options in the collection
+        var unset = Symbol();
+
         for (var optionInfo of definedOptions.getItems()) {
 
-            var value = null
+            var value: any = unset
 
             // matching defined option name with the supplied options
             if (optionInfo.name && this.options.hasOwnProperty(optionInfo.name)) {
@@ -145,7 +141,7 @@ export class ProgramArgs {
             }
 
             // matching option's other names with the supplied options
-            if (!value && optionInfo.aliases && optionInfo.aliases.length) {
+            if (value == unset && optionInfo.aliases && optionInfo.aliases.length) {
                 for (var alias of optionInfo.aliases) {
                     if (this.options.hasOwnProperty(alias)) {
                         value = this.options[alias]
@@ -153,38 +149,41 @@ export class ProgramArgs {
                 }
             }
 
+            // setting default value
+            if (value == unset && typeof optionInfo.value != "undefined") {
+                value = optionInfo.value
+            }
+
+            // set default value when supplied value and default value has different types
+            // this is to handle cases when option is set (--option without value or --no-option) 
+            // but default value is string or number
+            if (value != unset && typeof optionInfo.value != "undefined" && typeof value != typeof optionInfo.value) {
+                value = optionInfo.value
+            }
+
             // validating supplied value of the option with the pre-defined set of values
             value = this.getAcceptedValue(value, optionInfo)
 
             // adding option to the map object
-            if (value) {
+            if (value != unset) {
                 mappedOptions[optionInfo.propName] = value
             }
         }
-        return Object.seal(mappedOptions)
+        Object.seal(mappedOptions)
+        return new Proxy(mappedOptions, mappingTraps)
     }
 
     /** Creates a map for all defined params that are supplied to the program */
     async  createParamsMap(definedParams?: ParamCollection) {
         // object containing parameters mapped to supplied argument
-        var mappedParams: any = {
-            /** checks whether parameter is present or not */
-            $contains: function (names: string | string[]) {
-                if (!names) return false
-                names = Array.isArray(names) ? names : [names]
-                for (var name of names) {
-                    if (this.hasOwnProperty(name)) return true
-                    if (this._.hasOwnProperty(name)) return true
-                }
-            }
-        }
+        var mappedParams: any = {}
 
-        // assign all options to default '_' property
-        mappedParams._ = Array.from(this.params)
+        // assign all options to default '$unknown' property
+        mappedParams.$unknown = Array.from(this.params)
 
         // no need to proceed if definition is not available
         if (!definedParams || !definedParams.length) {
-            return mappedParams
+            return new Proxy(mappedParams, mappingTraps)
         }
 
         // first param to process
@@ -202,6 +201,9 @@ export class ProgramArgs {
                 }
                 continue
             }
+
+            // no need to continue mapping if there are no more supplied arguments
+            if (currentParamListIdx >= this.params.length) break
 
             // when parameters are supplied ->
 
@@ -228,10 +230,11 @@ export class ProgramArgs {
             // getting allowed value
             mappedParams[paramInfo.propName] = this.getAcceptedValue(mappedParams[paramInfo.propName], paramInfo)
         }
-        return Object.seal(mappedParams)
+        Object.seal(mappedParams)
+        return new Proxy(mappedParams, mappingTraps)
     }
 
-    getAcceptedValue(value: string | string[], infoObject?: IParamConfig | IOptionConfig): void | string | string[] {
+    getAcceptedValue(value: string | string[], infoObject?: IParamConfig | IOptionConfig): any {
         if (!value || !infoObject) return value
 
         // Get only allowed values when the info object contains a list of allowed value -->
