@@ -1,30 +1,36 @@
 # Easy Cli
-A quick and easy way of creating cli for your npm package.
+A quick and easy way of creating command line tool for your npm package.
 
 ## Quick Start
 
-### Create a script e.g. `test-cli.js`
+### Installation
+
+```
+npm install @auttam/easycli
+```
+
+#### Building a command line tool 
+Building a command line tool for npm package requires following -
+
+1. A npm package
+2. A script that serves as a program for the command line tool. These scripts contains _hashbang for Node.js scripts_ and are normally kept in `bin` folder of npm package.
+3. An entry in `bin` key of `package.json` that maps a command to the program script
+
+##### Writing hello-world program
+1. Initialize new npm package if not already exists
+2. Install easycli package (see installation above)
+3. Create `bin/hello-world.js` file with following content -
 
 ```javascript
+#!/usr/bin/env node
 const Program = require('@auttam/easycli').Program
 
-// Program class for cli
+// Program Class
 class HelloWorld extends Program {
 
-    //
-    // Main method: This method is called when program commands are
-    // disabled. Parameters defined in the main method (or the command methods 
-    // when program commands are enabled) are treated as the program's (or command's) parameters. 
-    // $params and $options are special method parameters that contains 
-    // the parameters and options supplied from command line 
-    main(message, $options) {
+    // entry point 
+    main(message) {
         message = message || 'Hello World!'
-        // checking whether any of the following options 
-        // are supplied with truthy values
-        if ($options.isSet('u', 'U')) {
-            message = message.toUpperCase()
-        }
-        // printing message
         console.log(message)
     }
 }
@@ -32,43 +38,48 @@ class HelloWorld extends Program {
 
 // Runs the program
 Program.run(new HelloWorld())
-
 ```
 
-### Run script
+##### Running hello-world script
 
-Run script without passing command line arguments:
+The program created for command line can be tested locally as 
 
 ```
-node ./test-cli 
+node ./bin/hello-world [arguments]
+```
+
+where _arguments_ is the list of the arguments program accepts.
+
+To install the tool globally update the `bin` field in package.json as following -
+
+```
+{
+    "bin":{
+        "hello-world" : "bin/hello-world"
+    }
+}
+```
+
+Try following commands (assuming package is installed globally) -
+
+`hello-world`
 
 output:
+```
 Hello World!
 ```
 
-Run script with single parameter:
-
-```
-node ./test-cli "Hello EasyCli"
+`hello-world "good morning!"`
 
 output:
-Hello EasyCli!
+```
+good morning!
 ```
 
-Run script with `-U` or `-u` option:
-
-```
-node ./test-cli -U
+`hello-world --help`
 
 output:
-HELLO WORLD!
 ```
-
-Run script with `-h`, or `--help` option:
-```
-node ./test-cli --help
-
-output:
 Hello World v1.0.0
 
 Usage: hello-world <message>
@@ -83,46 +94,32 @@ Other usage:
    hello-world --version, -v   To view help
 ```
 
-### Configure Program
+##### Configuring the program
+EasyCli generates a configuration dynamically for running program and generating help. For more complex uses, the configuration can be customized and extended by passing a configuration object to the constructor.
 
-Update above script with the following content -
+Following code shows a simple example of adding configuration for the  `hello-world` program-
 
 ```javascript
+#!/usr/bin/env node
+const Program = require('@auttam/easycli').Program
+
 // configuration object
 var config = {
-    name: 'Test Cli',
-    binaryName: 'test-cli',
-    help: 'This is a test cli',
+    help: 'This is a demo command line tool',
     params: [
         {
             name: 'message',
-            help: 'message to print',
-            required: true
+            help: 'message to print'
         }
-    ],
-    options: [{
-        name: 'U',
-        aliases: 'u',
-        help: 'prints message in uppercase'
-    }]
+    ]
 }
 
-
-// Program class for cli
+// Program Class
 class HelloWorld extends Program {
 
-    //
-    // Main method
-    main(message, $options) {
-
-        // Message is configured to be a required parameter
-        // thus expected to have a value always 
-
-        if ($options.$isSet('u', 'U')) {
-            message = message.toUpperCase()
-        }
-
-        // printing message
+    // entry point 
+    main(message) {
+        message = message || 'Hello World!'
         console.log(message)
     }
 }
@@ -131,91 +128,4 @@ class HelloWorld extends Program {
 // Runs the program with configuration
 Program.run(new HelloWorld(config))
 ```
-
-Running the script now without supplying any argument will trigger help as `message` is required.
-
-```
-node ./test-cli 
-
-output:
-Test Cli v1.0.0
-
-This is a test cli
-
-Usage: test-cli <message> [options ...]
-
-Parameters:
-
-   message      message to print (required)
-
-Options:
-
-   --U          prints message in uppercase
-                Other Names:
-
-Other usage:
-
-   test-cli --help, -h      To view help
-   test-cli --version, -v   To view help
-```
-
-Showing help by default on invalid parameter can be disabled by setting global setting `showHelpOnInvalidParams` to `false`. When help is disabled, runtime errors can be handled in `onExit()` method or in catch method of `Program.run()` method e.g. `Program.run(new HelloWorld(config)).catch(err=>{})`
-
-```javascript
-
-// disable help on invalid params
-Program.settings({
-    showHelpOnInvalidParams: false
-})
-
-var config = {
-    name: 'Test Cli',
-    binaryName: 'test-cli',
-    help: 'This is a test cli',
-    params: [
-        {
-            name: 'message',
-            help: 'message to print',
-            required: true
-        }
-    ],
-    options: [{
-        name: 'U',
-        aliases: 'u',
-        help: 'prints message in uppercase'
-    }]
-}
-
-
-// Program class for cli
-class HelloWorld extends Program {
-
-    //
-    // Main method
-    main(message, $options) {
-
-        // Message is configured to be a required parameter
-        // thus expected to have a value always 
-
-        if ($options.$isSet('u', 'U')) {
-            message = message.toUpperCase()
-        }
-
-        // printing message
-        console.log(message)
-    }
-
-    // method called before program ends
-    onExit(error, execResult, exitCode) {
-        console.error(error.message)
-    }
-}
-
-
-// Runs the program with configuration
-Program.run(new HelloWorld(config))
-
-// If 'onExit()` is not implemented errors can also be handled as:
-// Program.run(new HelloWorld(config)).catch(err=>console.error(error.message))
-
-```
+The configuration shown above just adds a help text to the program and its `message` parameter, but configuration can be added for several other things. For example more parameters, options with aliases, declaring different reference names for parameters and options, specifying default values or predefined list of accepted values, aliases for options, changing program info etc.  
