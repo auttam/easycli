@@ -39,6 +39,8 @@ export interface ISettings {
     prioritizeProgramOptions?: boolean,
     /** flag to show help on invalid parameter, like required param missing, value provided is not allowed etc. */
     showHelpOnInvalidParams?: boolean
+    /** flag to use colors while printing text to console */
+    useColors?: boolean
 }
 
 export const SettingStore: ISettings = {
@@ -46,7 +48,7 @@ export const SettingStore: ISettings = {
     mainMethod: 'main',
 
     /** global rejection handler for 'unhandledRejection' event of the process */
-    rejectionHandler: (reason: string, promise?: any) => { console.error(reason) },
+    rejectionHandler: (reason: string, promise?: any) => { if (SettingStore.useColors) { console.error("\u001b[31;1m" + reason + "\u001b[0m") } else { console.error(reason) } },
 
     /** index from where minimist should start parsing command line arguments */
     processArgvStartIndex: 2,
@@ -74,6 +76,8 @@ export const SettingStore: ISettings = {
     prioritizeProgramOptions: false,
 
     showHelpOnInvalidParams: true,
+
+    useColors: true,
 
     /** name of the method that is called when command name not supplied */
     set defaultCommandMethod(name: string) {

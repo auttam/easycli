@@ -14,8 +14,25 @@ var defaultRightIndent = 3
 const BOLD = '\u001b[1m'
 const RESET = '\u001b[0m'
 const UNDERLINE = '\u001b[4m'
+
 //
 // Help Printers
+
+function boldText(text: string) {
+    if (!SettingStore.useColors) return text
+    return BOLD + text + RESET
+}
+
+function underlineText(text: string) {
+    if (!SettingStore.useColors) return text
+    return UNDERLINE + text + RESET
+}
+
+function underlinedBoldText(text: string) {
+    if (!SettingStore.useColors) return text
+    return BOLD + UNDERLINE + text + RESET
+
+}
 
 function padString(target: string, width: number) {
     if (!width || isNaN(width) || width < target.length) return target
@@ -73,7 +90,7 @@ function printColumnar(columnCollection: string[][], options: { colWidth: number
     options.colWidth = Number(options.colWidth) || 0
 
     // calculating maximum chars that can be printed in on console
-    var maxStringSize = (process.stdout.columns || 80) - (options.leftIndent + options.rightIndent)
+    var maxStringSize = (process.stdout.columns || 80) - (options.leftIndent + options.rightIndent + 5)
 
     // calculating width of first column
     var firstColWidth = 0
@@ -110,7 +127,7 @@ function printColumnar(columnCollection: string[][], options: { colWidth: number
 function printProgramInfo(programInfo: IProgramConfig) {
     // Program Name
     console.log()
-    console.log(`${BOLD + UNDERLINE}${programInfo.name} v${programInfo.version}${RESET}`)
+    console.log(boldText(`${programInfo.name} v${programInfo.version}`))
 
     // Program help
     if (programInfo.help) {
@@ -144,7 +161,7 @@ function printProgramUsage(config: ProgramConfiguration) {
 /** Prints command list */
 function printCommandList(config: ProgramConfiguration, commands: CommandCollection) {
     console.log()
-    console.log(BOLD + UNDERLINE + 'Available Commands:' + RESET)
+    console.log(underlinedBoldText('Available Commands:'))
     console.log()
 
     var columnCollection = []
@@ -160,16 +177,16 @@ function printCommandList(config: ProgramConfiguration, commands: CommandCollect
 function printOptionList(options: OptionCollection) {
     if (!options.length) return
     console.log()
-    console.log(BOLD + UNDERLINE + 'Options:' + RESET)
+    console.log(underlinedBoldText('Options:'))
     console.log()
 
     var columnCollection = []
     for (var option of options.getItems()) {
         var optionInfo = '--' + option.name
         columnCollection.push(['--' + option.name, option.help || ''])
-        if (option.aliases && Array.isArray(option.aliases)) {
+        if (option.aliases && Array.isArray(option.aliases) && option.aliases.length) {
             var aliases = option.aliases.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
-            columnCollection.push(['', 'Other Names: ' + aliases])
+            columnCollection.push(['', boldText('Other Names: ') + aliases])
         }
     }
     // printing command list
@@ -181,16 +198,16 @@ function printParamsList(params: ParamCollection) {
     if (!params || !params.length) return
 
     console.log()
-    console.log(BOLD + 'Parameters:' + RESET)
+    console.log(boldText('Parameters:'))
     console.log()
     var columnCollection = []
     for (var param of params.getItems()) {
         var desc = param.help || ''
-        desc += param.required ? ' ' + BOLD + '(required)' + RESET : ''
+        desc += param.required ? ' ' + boldText('(required)') : ''
         columnCollection.push([param.name || '', desc])
 
         if (param.acceptOnly && param.acceptOnly.length) {
-            columnCollection.push(['', 'Possible Values: ' + param.acceptOnly.join(', ')])
+            columnCollection.push(['', boldText('Accepted Values: ') + param.acceptOnly.join(', ')])
         }
 
     }
