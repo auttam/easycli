@@ -64,3 +64,6 @@ typings/
 lib/**/*.js
 test/**/*.js
 /index.js
+
+# generated typing for test
+*.d.ts
