@@ -162,7 +162,9 @@ export class ProgramArgs {
             }
 
             // validating supplied value of the option with the pre-defined set of values
-            value = this.getAcceptedValue(value, optionInfo)
+            if (value != unset) {
+                value = this.getAcceptedValue(value, optionInfo)
+            }
 
             // adding option to the map object
             if (value != unset) {
@@ -194,16 +196,16 @@ export class ProgramArgs {
             if (!paramInfo.name) return
 
             // When no parameter is supplied to the program ->
-            if (!this.params.length) {
+            // or when required parameter is not supplied
+            if (!this.params.length || currentParamListIdx >= this.params.length) {
                 // Validation 1: Parameter configuration must have default value when no param is passed from cli
                 if (paramInfo.required && typeof paramInfo.value == 'undefined') {
-                    throw new RuntimeError('Required parameter missing', paramInfo.name)
+                    throw new RuntimeError('Required parameter missing', paramInfo)
                 }
-                continue
-            }
 
-            // no need to continue mapping if there are no more supplied arguments
-            if (currentParamListIdx >= this.params.length) break
+                // no need to continue mapping if there are no more supplied arguments
+                break
+            }
 
             // when parameters are supplied ->
 
@@ -224,7 +226,7 @@ export class ProgramArgs {
 
             // Validation 1: Parameter must have value when param is required
             if (paramInfo.required && !mappedParams[paramInfo.propName]) {
-                throw new RuntimeError('Required parameter missing', paramInfo.name)
+                throw new RuntimeError('Required parameter missing', paramInfo)
             }
 
             // getting allowed value
@@ -239,12 +241,11 @@ export class ProgramArgs {
 
         // Get only allowed values when the info object contains a list of allowed value -->
         if (infoObject.acceptOnly && Array.isArray(infoObject.acceptOnly) && infoObject.acceptOnly.length) {
-
             // prepare a list to allowed values for case-insensitive search
+
             var acceptOnly = infoObject.acceptOnly.map((value: string) => value.toLowerCase())
 
             var matchedValue
-
             // get list of matched values from the allowed list when the value is an array
             if (Array.isArray(value) && value.length) {
                 matchedValue = []
@@ -257,7 +258,7 @@ export class ProgramArgs {
             }
 
             // get single matched value from the allowed list when value is a string 
-            if (!Array.isArray(value)) {
+            if (!Array.isArray(value) && typeof value == "string") {
                 var idx = acceptOnly.indexOf(value.toLowerCase())
                 if (idx > -1) {
                     matchedValue = infoObject.acceptOnly[idx]
@@ -271,7 +272,8 @@ export class ProgramArgs {
 
             // throw run time exception if there is still no matched value at this point
             if (!matchedValue) {
-                throw new RuntimeError(`Value not allowed for ${infoObject.name} ${(infoObject.hasOwnProperty('type') ? ' parameter' : ' option')} allowed values are ' ${infoObject.acceptOnly.join(', ')}`)
+                throw new RuntimeError(`Incorrect supplied value for parameter`, infoObject)
+                ///throw new RuntimeError(`Value not allowed for ${infoObject.name} ${(infoObject.hasOwnProperty('type') ? ' parameter' : ' option')} allowed values are ' ${infoObject.acceptOnly.join(', ')}`)
             }
 
             return matchedValue
