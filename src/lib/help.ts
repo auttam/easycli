@@ -316,7 +316,7 @@ function commandHelp(config: ProgramConfiguration, commandName?: string) {
 
 /** Prints Program or Command help on console */
 function print(config: any, commandName?: string) {
-    if (!config) throw new RuntimeError('Configuration object is null or undefined, help cannot be printed')
+    if (!config) throw new RuntimeError('Unable to show help. configuration not found')
 
     // Show command help, If command name is present 
     if (commandName) {
@@ -346,4 +346,34 @@ export function command(config: any, name: string) {
 export function version(config: any) {
     console.log()
     console.log(config.name + ' v' + config.version)
+}
+
+async function printInfo(infoType: any, config: any, commandName: string, info: any, msg?: string) {
+    infoType = infoType == 'param' ? 'Parameter' : 'Option'
+    if (msg) {
+        console.log()
+        console.log(boldText(msg))
+    }
+    console.log()
+    if (commandName) {
+        console.log('Command Name: ' + boldText(commandName))
+    }
+    console.log(infoType + ' Name: ' + boldText(info.name + (info.required ? boldText(' (required)') : '')))
+
+    if (info.acceptOnly && info.acceptOnly.length) {
+        console.log()
+        console.log('Following values are allowed: ')
+        console.log()
+        console.log(info.acceptOnly.join(', '))
+    }
+}
+
+/** print help from param config */
+export function paramInfo(config: any, commandName: string, info: any, msg?: string) {
+    return printInfo('param', config, commandName, info, msg)
+}
+
+/** print help from option config */
+export function optionInfo(config: any, commandName: string, info: any, msg?: string) {
+    return printInfo('option', config, commandName, info, msg)
 }

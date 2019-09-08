@@ -2,6 +2,7 @@ import { ParamCollection } from '../config/param-config'
 import { ProgramArgs } from './program-args'
 import { SettingStore } from '../settings'
 import { OptionCollection } from '../config/option-config'
+import * as Help from '../help'
 
 export enum RuntimeStates {
     CREATED = 'created',
@@ -67,7 +68,7 @@ export class RuntimeContext {
 
             // Showing command help
             if (SettingStore.showHelpOnInvalidOptions) {
-                return this._program.showHelp(commandName)
+                return Help.optionInfo(this._program.config, this.requestedCommand, ex.data, ex.message)
             }
 
             // Otherwise re-throwing exception
@@ -86,7 +87,7 @@ export class RuntimeContext {
 
             // Showing command help
             if (SettingStore.showHelpOnInvalidParams) {
-                return this._program.showHelp(commandName)
+                return Help.paramInfo(this._program.config, this.requestedCommand, ex.data, ex.message)
             }
 
             // Otherwise re-throwing exception
