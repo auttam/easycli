@@ -136,15 +136,22 @@ export class ProgramArgs {
             var value: any = unset
 
             // matching defined option name with the supplied options
-            if (optionInfo.name && this.options.hasOwnProperty(optionInfo.name)) {
-                value = this.options[optionInfo.name]
+            if (optionInfo.name && mappedOptions.$unknown.hasOwnProperty(optionInfo.name)) {
+                // read value
+                value = mappedOptions.$unknown[optionInfo.name]
+                // delete identified option from unknown
+                delete mappedOptions.$unknown[optionInfo.name]
+
             }
 
             // matching option's other names with the supplied options
             if (value == unset && optionInfo.aliases && optionInfo.aliases.length) {
                 for (var alias of optionInfo.aliases) {
-                    if (this.options.hasOwnProperty(alias)) {
-                        value = this.options[alias]
+                    if (mappedOptions.$unknown.hasOwnProperty(alias)) {
+                        // read value
+                        value = mappedOptions.$unknown[alias]
+                        // delete identified option from unknown
+                        delete mappedOptions.$unknown[alias]
                     }
                 }
             }
@@ -232,6 +239,10 @@ export class ProgramArgs {
             // getting allowed value
             mappedParams[paramInfo.propName] = this.getAcceptedValue(mappedParams[paramInfo.propName], paramInfo)
         }
+        // splicing unknown list after identified arguments
+        mappedParams.$unknown = mappedParams.$unknown.slice(currentParamListIdx);
+
+        // sealing the map
         Object.seal(mappedParams)
         return new Proxy(mappedParams, mappingTraps)
     }
