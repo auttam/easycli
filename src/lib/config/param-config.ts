@@ -65,6 +65,7 @@ export class ParamCollection extends Collection<Param>{
     private _propNames: any = {}
     public indexParamsParam: number = -1
     public indexOptionsParam: number = -1
+    public indexSpreadParam: number = -1
 
     addByConfig(configs: IParamConfig | IParamConfig[]) {
         if (this.length) throw new ConfigurationError('Unable to initialize collection with properties names. Collection not empty!')
@@ -99,6 +100,7 @@ export class ParamCollection extends Collection<Param>{
             if (propName.startsWith('.')) {
                 propName = propName.replace('...', '')
                 paramConfig.type = ParamType.LIST
+                this.indexSpreadParam = idx
             }
 
             // add

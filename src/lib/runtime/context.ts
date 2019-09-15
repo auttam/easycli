@@ -104,11 +104,21 @@ export class RuntimeContext {
                 args[param.$idx] = $params[param.propName]
             }
         }
+        // inserting $param
         if (collection.indexParamsParam > -1) {
             args[collection.indexParamsParam] = $params
         }
+        // inserting $option
         if (collection.indexOptionsParam > -1) {
             args[collection.indexOptionsParam] = $options
+        }
+        // inserting spread parameter
+        if (collection.indexSpreadParam > -1 && args[collection.indexSpreadParam]) {
+            var spread = args[collection.indexSpreadParam]
+            // removing item from spread index
+            args.splice(collection.indexSpreadParam, 1)
+            // spreading param
+            args.splice(collection.indexSpreadParam, 0, ...spread)
         }
         return args
     }
