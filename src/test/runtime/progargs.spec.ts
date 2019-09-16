@@ -121,6 +121,14 @@ describe('Program Args', () => {
             expect(param.myParam1).to.equal('arg1')
             expect(param.myParam2).to.equal('arg2')
         })
+
+        it('$unknown contains only unidentified arguments', async () => {
+            progArgs.read(args)
+            var collection = new ParamCollection()
+            collection.addByConfig([{ name: 'my-param1' }, { name: 'my-param2' }])
+            var param = await progArgs.createParamsMap(collection)
+            expect(param.$unknown).to.eql(['arg4'])
+        })
     })
 
     describe('createOptionsMap()', () => {
@@ -131,6 +139,13 @@ describe('Program Args', () => {
             var option = await progArgs.createOptionsMap(collection)
             expect(option.optionArg1).to.equal(true)
             expect(option.optionA).to.equal('arg3')
+        })
+        it('$unknown contains only unidentified arguments', async () => {
+            progArgs.read(args)
+            var collection = new OptionCollection()
+            collection.addList([{ name: 'option-arg1' }, { name: 'option-arg2', propName: 'optionA' }])
+            var option = await progArgs.createOptionsMap(collection)
+            expect(Object.keys(option.$unknown)).to.eql(['option-arg5'])
         })
     })
 })

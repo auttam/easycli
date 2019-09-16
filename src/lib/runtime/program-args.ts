@@ -6,15 +6,25 @@ const minimist = require('minimist')
 
 // traps for mapped options and mapped params proxies
 var mappingTraps: any = {
-    // get trap
     get(target: any, prop: string): any {
+        // implementation of $has method
         if (prop === '$has') {
             return (...props: string[]) => {
                 if (!props) return false
                 for (var name of props) {
                     if (target.hasOwnProperty(name)) return true
+                    if (!Array.isArray(target.$unknown) && target.$unknown.hasOwnProperty(name)) return true
                 }
                 return false
+            }
+        }
+
+        // implementation of $get method (options only)
+        if (!Array.isArray(target.$unknown) && prop === '$get') {
+            return (prop: string) => {
+                if (!prop) return
+                if (target.hasOwnProperty(prop)) return target[prop]
+                if (target.$unknown.hasOwnProperty(prop)) return target.$unknown[prop]
             }
         }
 
