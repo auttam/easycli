@@ -1,7 +1,7 @@
-# Easy Cli
-A quick and easy way of creating command line tool for your npm package.
+# Easy CLI
+A quick and easy way of creating a command-line tool for npm package.
 
-## Quick Start
+## Quick Start Guide
 
 ### Installation
 
@@ -9,81 +9,52 @@ A quick and easy way of creating command line tool for your npm package.
 npm install @auttam/easycli
 ```
 
-#### Building a command line tool 
-Building a command line tool for a npm package requires following -
+### Creating a simple CLI program with EasyCli
+Following is an example of a simple CLI program that accepts command-line arguments and prints a message to the console.
 
-1. A npm package
-2. A script that serves as a program for the command line tool. These type of scripts contain _hashbang for Node.js scripts_ and are normally kept in `bin` folder of npm package.
-3. An entry in the `bin` key of a `package.json` that maps a command name to the program script. This entry specifies by what command the program will be invoked from the command line.
-
-#### Building a command line tool with EasyCli
-EasyCli provides features required to create a cli program. Creating a program is as easy as declaring a class and implementing method(s) that are invoked from the command line.
-
-```javascript
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
-
-// declares program
-class MyCli extends Program {
-
-    // entry point 
-    main() { }
-}
-
-// runs program
-Program.run(new MyCli())
-```
-The `main()` method will be called automatically when above program is invoked.
-
-EasyCli also supports program commands (not enabled by default) where the first _non-option_ argument is treated as the command of the cli program. 
-
-When commands are enabled, easy-cli will treat _read_ as the `read` command in the following example -
-
-```
-my-cli read ./my_spec.js
-```
-
- 
-#### Building hello-world program
-Following is a quick tutorial on how to create a simple program that accepts an argument as a parameter from command line and displays it back to the console.
-
-##### Writing the program
 1. Initialize new npm package if not already exists
-2. Install easycli package (see installation above)
-3. Create `bin/hello-world.js` file with following content -
+2. Install easy cli package (see the installation above)
+3. Create `bin/hello-world.js` script with the following code -
 
 ```javascript
 #!/usr/bin/env node
 const Program = require('@auttam/easycli').Program
 
-// Program Class
+// represents the CLI program
 class HelloWorld extends Program {
 
-    // entry point 
-    main(message) {
-        message = message || 'Hello World!'
+    // method called when CLI is invoked
+    // command-line arguments passed as the parameters
+    // parameter $options contains all the options 
+    main(message, $options) {
+        
+        message = message || 'Hello World'
+        
+        // checking if '-U' option is set
+        if ($options.$get('U')) {
+            message = message.toUpperCase()
+        }
+
+        // printing the message
         console.log(message)
     }
 }
 
-
-// Runs the program
+// Running the program
 Program.run(new HelloWorld())
 ```
 
-##### Running the program
-
-The program can be tested locally by running the following command -
-
+Run the script using the following command -
 ```
-node ./bin/hello-world [arguments]
+node ./bin/hello-world "simple cli" -U
+
+# expected output
+# SIMPLE CLI
 ```
+To test the CLI tool globally -
 
-where _arguments_ is the list of arguments the program accepts.
+Update the `bin` field in package.json as with a command as shown in example below and install the package globally -
 
-To test globally, update the `bin` field of package.json as shown below and install the package globally. See [npm docs](https://docs.npmjs.com/cli/install) for more information.
-
-`package.json`
 ```
 {
     "bin":{
@@ -94,42 +65,114 @@ To test globally, update the `bin` field of package.json as shown below and inst
 
 Try following commands (assuming package is installed globally) -
 
-`hello-world`
-
-output:
 ```
-Hello World!
+hello-world
+
+# expected output
+# SIMPLE CLI
 ```
+#### Cli Help
+EasyCli generates and displays the help for the CLI tool when `-h` or `--help` option is set. To view the help for the `hello-world` tool, run the script as following:
 
-`hello-world "good morning!"`
-
-output:
 ```
-good morning!
+node ./bin/hello-world -h 
 ```
+#### Cli Version
+Like help, easycli also displays version information when any of `-v`, `--ver`, or `--version` option is set:
 
-`hello-world --help`
-
-output:
-```
-Hello World v1.0.0
-
-Usage: hello-world <message>
-
-Parameters:
-
-   message
-
-Other usage:
-
-   hello-world --help, -h      To view help
-   hello-world --version, -v   To view help
+ ```
+node ./bin/hello-world -v 
 ```
 
-##### Configuring the program
-EasyCli generates a configuration dynamically for running program and generating help. For more complex uses, the configuration can be customized and extended by passing a configuration object to the constructor.
+### Creating a command based CLI program
+EasyCli supports two types of programs: a simple program like shown above which contains a "main" method that is called whenever CLI is invoked. All command-line arguments are interpreted as the parameters and options of this method. 
 
-Following code shows a simple example of adding configuration for the  `hello-world` program-
+Another type of program it supports is the command based program that contains multiple methods that are called based on the requested command. 
+
+Following is an example of a CLI program that accepts 3 different commands: `print-message`, `sum` and `test`.
+
+Create another script called `bin/demo-commands.js` and copy the following contents -
+
+```javascript
+#!/usr/bin/env node
+const Program = require('@auttam/easycli').Program
+
+// enable commands
+Program.settings({
+    enableCommands: true
+})
+
+// represents the CLI program
+class DemoCommands extends Program {
+
+    // method called when 'print-message' command is requested
+    // parameters work same as for main() method
+    printMessageCommand(message, $options) {
+        message = message || 'Hello World'
+
+        // checking if '-U' option is set
+        if ($options.$get('U')) {
+            message = message.toUpperCase()
+        }
+
+        // printing the message
+        console.log(message)
+    }
+
+    // method called when 'sum' command is requested
+    // parameters work same as for main() method
+    sumCommand(...numbers) {
+        if (!numbers.length) return
+        console.log('Result:', numbers.reduce((p, c) => p + c))
+    }
+
+    // method called when 'test' command is requested
+    // parameters work same as for main() method
+    testCommand($params, $options) {
+        console.log('This is a test command');
+        // log all parameters supplied to the cli program
+        console.log('params:', $params.$unknown);
+        //log all options supplied to the cli program
+        console.log('options:', $options.$unknown);
+    }
+
+}
+
+// Running the program
+Program.run(new DemoCommands())
+
+```
+To run the commands implemented above, run the script as shown in the following examples -
+```
+# 1. running print-message command
+node ./bin/demo-commands print-message "Hello Commands!"
+
+# expected output
+# Hello Commands!
+```
+```
+# 2. running sum command
+node ./bin/demo-commands sum 1 2 3 4 5
+
+# expected output
+# Result: 15
+```
+```
+# 3. running test command
+node ./bin/demo-commands test param1 param2 --option1 --option2 Yes
+
+# expected output
+# This is a test command
+# params: [ 'param1', 'param2' ]
+# options: { option1: true, option2: 'Yes' }
+```
+### Creating configuration
+
+EasyCli generates an internal configuration from the code that is used to run the program and to display CLI help. 
+
+This configuration can be customized or elaborated for more advanced uses.
+
+Following code shows how to add configuration for the `hello-world` program-
 
 ```javascript
 #!/usr/bin/env node
@@ -137,7 +180,7 @@ const Program = require('@auttam/easycli').Program
 
 // configuration object
 var config = {
-    help: 'This is a demo command line tool',
+    help: 'This is a demo command-line tool',
     params: [
         {
             name: 'message',
@@ -146,337 +189,38 @@ var config = {
     ]
 }
 
-// Program Class
+#!/usr/bin/env node
+const Program = require('@auttam/easycli').Program
+
+// represents the CLI program
 class HelloWorld extends Program {
 
-    // entry point 
-    main(message) {
-        message = message || 'Hello World!'
+    // method called when CLI is invoked
+    // command-line arguments passed as the parameters
+    // parameter $options contains all the options 
+    main(message, $options) {
+        
+        message = message || 'Hello World'
+        
+        // checking if '-U' option is set
+        if ($options.$get('U')) {
+            message = message.toUpperCase()
+        }
+
+        // printing the message
         console.log(message)
     }
 }
 
-
-// Runs the program with configuration
+// Running the program
 Program.run(new HelloWorld(config))
 ```
-Though the configuration shown above just adds the help texts to the program and to its `message` parameter, several other things can be configured. See **Cli Configuration** for information.
-
-## Cli Configuration
-Though easy-cli generates the configuration initially, it allows adding more and/or replace the existing configuration before running the program. Almost any configuration can be changed except `methodName` of the auto-generated commands and `propName` of the auto-generated parameters 
-
-Following are the details of configurations for Program, Command, Params and Options. 
-
-### Program Configuration
-
-```javascript
-{
-    /** all fields are optional */
-
-    /** name of the cli tool e.g. Http Server */
-    "name": "string",
-
-    /** name to match "bin" key of package.json */
-    "binaryName": "string", 
-
-    /** help text for the command line tool */
-    "help": "string",
-
-    /** version number to match package.json */
-    "version": "string",
-
-    /** array of program parameters, see param config */
-    "params": [],
-
-    /** array of program options, see option config */
-    "options": [],
-
-    /** array of program commands */
-    "commands": []
-}
-```
-
-### Command Configuration
-
-```javascript
-{
-    /** name of the command */
-    "name": "string"
-
-    /** name of the class method mapped with the command */
-    "method": "string"
-
-    /** help text for the command */
-    "help": "string",
-
-    /** array of command parameters, see param config */
-    "params": [],
-
-    /** array of command options, see option config */
-    "options": [],
-}
-```
-
-### Param Configuration
-
-```javascript
-{    
-    /** name of the parameter */
-    /** required field */
-    "name": "string",
-
-    /** help text for the parameter */
-    "help": "string",
-
-    /** name of the property for code reference */
-    /** not: changing this field when parameter is already 
-        auto-generated from method signature will throw a 
-        configuration error */ 
-    "propName": "string",
-    
-    /** specifies whether parameter accepts a single (default) 
-        value or a list of values e.g. arg1 arg2 arg3 ...*/
-    "type": "single | list",
-
-    /** if set to true, make sure value is supplied for the 
-        parameter */
-    "required": true|false, 
-
-    /** string array specifies list of accepted values for the 
-        parameter, throws error different value is supplied. 
-        To prevent error default value must be provided to 
-        the "value" field */
-    "acceptOnly": ["string"],
- 
-    /** default value, must be one of accepted values */
-    "value": "string"
-}
-```
-
-### Option Configuration
-
-```javascript
-{    
-    /** name of the option */
-    /** required field */
-    "name": "string",
- 
-    /** help text for the option */
-    "help": "string",
-    
-    /** name of the property for code reference */
-    "propName": "string",
-    
-    /** string array specifying other possible names for the 
-        option, can contain single characters or words */
-    "aliases": [ "string" ]
-
-    /** string array specifies list of accepted values for the 
-        option, same as parameters */
-    "acceptOnly": ["string"],
- 
-    /** default value, must be one of accepted values */
-    "value": "string"
-}
-```
-
-## Program Setting
-EasyCli also provides couple of settings that controls the program execution. These setting must be set before calling `constructor` of the `Program` class. 
-
-Following is how to update the settings -
-
-```javascript
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
-
-// updating program settings
-Program.settings({
-    mainMethod: "init",
-    useColors: false
-})
-
-class HelloWorld extends Program {
-    init() {
-        console.log("init() is main now, & help won't have colors")
-    }
-}
-
-Program.run(new HelloWorld())
+Run the script again with `-h` or `--help` option and notice how help now shows help text for `message` parameter.
 
 ```
-
-### Available Settings with default values
-
-```javascript
-{
-    /** name of the main method to call when program is running in no-command mode */
-    mainMethod: "main",
-    
-    /** global rejection handler for 'unhandledRejection' event of the process */
-    rejectionHandler: (reason, promise) => { console.error(reason) },
-    
-    /** index from where minimist should start parsing command line arguments */
-    processArgvStartIndex: 2,
-    
-    /** options for minimist arguments parser, see minimist package for more help  */
-    minimistOptions: null,
-    
-    /** flag to enable program commands */
-    /** note: when commands are enabled, mainMethod is not called */
-    enableCommands: false,
-    
-    /** flag to enable global help command  */
-    enableHelpCommand: true,
-
-    /** flag to enable global version option --version, -v or --Ver */
-    enableVersionOption: true,
-
-    /** flag to enable global help option --help or -h */
-    enableHelpOption: true,
-
-    /** flag to show help when no command argument is supplied to the program */
-    showHelpOnNoCommand: true,
-    
-    /** flag to show help on invalid options i.e when value provided is not allowed */
-    showHelpOnInvalidOptions: true,
-    
-    /** flag to prioritize program options, i.e. call 'onProgramOption' even when command has options */
-    prioritizeProgramOptions: false,
-    
-    /** flag to show help on invalid parameter, like required param missing, value provided is not allowed etc. */
-    showHelpOnInvalidParams: true,
-    
-    /** flag to use colors while printing text to console */
-    useColors: true,
-
-    /** list of method names to ignore as command methods */
-    nonCmdMethods: ['onInvalidCommand', 'onExit', 'onProgramOption'],
-    
-    /** name of the method that is called when command name not supplied */
-    defaultCommandMethod: "defaultCommand",
-    
-}
+node ./bin/hello-world -h 
 ```
 
-## Sample Program
+Though the configuration shown above just adds the help texts to the program and to its `message` parameter, several other things can be configured. See [CLI Configuration](https://github.com/auttam/easycli/wiki/CLI-Configuration) wiki on github for information.
 
-### figlet-demo
-
-In this example-
-1. Configuration is in a separate file
-2. Main method is executed asynchronously 
-3. `async/await` is used
-4. `acceptOnly` field of options configuration is set dynamically 
-
-Program configuration file: `bin/config.json`
-
-```json
-{
-    "help": "Figlet demo created with EasyCli",
-    "params": [
-        {
-            "name": "text",
-            "help": "text to generate asci art",
-            "required": true
-        }
-    ],
-    "options": [
-        {
-            "name": "help",
-            "aliases": [
-                "f"
-            ],
-            "help": "font to use for drawing asci art"
-        },
-        {
-            "name": "horizontal-layout",
-            "aliases": [
-                "hl"
-            ],
-            "value": "default",
-            "help": "value that indicates the horizontal layout to use",
-            "acceptOnly": [
-                "default",
-                "full",
-                "fitted",
-                "controlled smushing",
-                "universal smushing"
-            ]
-        },
-        {
-            "name": "vertical-layout",
-            "aliases": [
-                "vl"
-            ],
-            "value": "default",
-            "help": "value that indicates the vertical layout to use",
-            "acceptOnly": [
-                "default",
-                "full",
-                "fitted",
-                "controlled smushing",
-                "universal smushing"
-            ]
-        }
-    ]
-}
-```
-
-Program script file: `bin/figlet-demo.js`
-
-```javascript
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
-const figlet = require('figlet')
-const config = require('./config')
-
-class FigletDemo extends Program {
-
-    async main(text, $options) {
-        var data = await this.generate(text, {
-            font: $options.font,
-            horizontalLayout: $options.horizontalLayout,
-            verticalLayout: $options.verticalLayout,
-        })
-        console.log(data)
-    }
-
-    generate(msg, options) {
-        return new Promise((resolve, reject) => {
-            figlet(msg, options, (err, data) => {
-                if (err) {
-                    reject(err)
-                    return
-                }
-                resolve(data)
-            })
-        })
-    }
-}
-
-// loading available font names
-figlet.fonts(function (err, fonts) {
-    if (err) {
-        console.log('There was some error running figlet demo');
-        console.dir(err);
-        return;
-    }
-
-    // setting font names as accepted values for --font option
-    config.options[0].acceptOnly = fonts
-
-    // running program
-    Program.run(new FigletDemo(config))
-});
-
-```
-
-`package.json` file:
-
-```
-{
-    "bin":{
-        "figlet-demo" : "bin/figlet-demo"
-    }
-}
-```
+For more information visit [wiki](https://github.com/auttam/easycli/wiki) page.
