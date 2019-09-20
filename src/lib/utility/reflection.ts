@@ -1,5 +1,5 @@
 
-export interface IMergeOptions { copyFunctions?: boolean, copyEmpty?: boolean, throwTypeError?: boolean, ignoreProps?: any[] }
+export interface IMergeOptions { copyFunctions?: boolean, copyEmpty?: boolean, throwTypeError?: boolean, ignoreProps?: any[], insertProps?: boolean | string[] }
 
 /** Copies values from source to target for only properties that exists in target  */
 export function mergeTypeSafe(target: any, source: any, options: IMergeOptions = {}) {
@@ -10,6 +10,7 @@ export function mergeTypeSafe(target: any, source: any, options: IMergeOptions =
     options.copyFunctions = options.copyFunctions || false
     options.throwTypeError = options.throwTypeError || false
     options.ignoreProps = Array.isArray(options.ignoreProps) ? options.ignoreProps : []
+    options.insertProps = options.insertProps || false
 
     Reflect.ownKeys(source).forEach(property => {
 
@@ -21,9 +22,6 @@ export function mergeTypeSafe(target: any, source: any, options: IMergeOptions =
         // don't copy functions if copyFunctions is false
         if (typeof propSource == 'function' && !options.copyFunctions) return
 
-        // don't copy if target doesn't have the property
-        if (typeof propTarget == 'undefined') return
-
         // verify array
         if (Array.isArray(propTarget)) {
             // don't copy if source property is not an array
@@ -34,6 +32,17 @@ export function mergeTypeSafe(target: any, source: any, options: IMergeOptions =
 
         // don't copy empty value if not allowed
         if (!propSource && !options.copyEmpty) return
+
+        // don't copy if target doesn't have the property
+        // and insert is not set
+        if (typeof propTarget == 'undefined') {
+            if (!options.insertProps) return
+            if (!Array.isArray(options.insertProps) || !options.insertProps.length) return
+            if (typeof property != "string" || options.insertProps.indexOf(property) == -1) return
+            // otherwise create property in target and copy value
+            target[property] = propSource
+            return
+        }
 
         // copy value
         if (typeof propSource == typeof propTarget) {

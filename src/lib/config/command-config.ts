@@ -155,4 +155,11 @@ export class CommandCollection extends Collection<Command>{
         return this.hasKey(methodName)
     }
 
+    /** A method to re-validate each item in collection */
+    public verify() { 
+        for(var command of this.getItems()){
+            command.params.verify()
+        }
+    }
+
 }

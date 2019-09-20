@@ -37,6 +37,9 @@ export class ProgramConfiguration {
     public readonly options: OptionCollection = new OptionCollection()
     public readonly params: ParamCollection = new ParamCollection()
 
+    // flag to set use of decorators
+    public decoratorsEnabled: boolean = false
+
     /** Initializes default configuration for the target object and injects 
      *  it into the target. If target already has an instance configuration, 
      *  returns the existing configuration. */
@@ -119,5 +122,16 @@ export class ProgramConfiguration {
             help: this.help,
             version: this.version
         }
+    }
+
+    /** Validates configuration */
+    public verify() {
+        if (SettingStore.enableCommands) {
+            this.commands.verify()
+        }
+        else {
+            this.params.verify()
+        }
+
     }
 }

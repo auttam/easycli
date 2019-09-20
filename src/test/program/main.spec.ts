@@ -68,7 +68,7 @@ describe('No-Command Mode', () => {
             expect(_a).to.equal(1)
             expect(_b).to.equal(2)
             expect(_c).to.equal(3)
-            expect(_p.$unknown).to.eql([1, 2, 3, 4])
+            expect(_p.$unknown).to.eql([4])
             expect("x" in _o.$unknown).to.equal(true)
         })
 

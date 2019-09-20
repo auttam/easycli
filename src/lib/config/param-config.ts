@@ -65,6 +65,7 @@ export class ParamCollection extends Collection<Param>{
     private _propNames: any = {}
     public indexParamsParam: number = -1
     public indexOptionsParam: number = -1
+    public indexSpreadParam: number = -1
 
     addByConfig(configs: IParamConfig | IParamConfig[]) {
         if (this.length) throw new ConfigurationError('Unable to initialize collection with properties names. Collection not empty!')
@@ -99,6 +100,7 @@ export class ParamCollection extends Collection<Param>{
             if (propName.startsWith('.')) {
                 propName = propName.replace('...', '')
                 paramConfig.type = ParamType.LIST
+                this.indexSpreadParam = idx
             }
 
             // add
@@ -144,8 +146,8 @@ export class ParamCollection extends Collection<Param>{
                 if (param.$idx > -1 && config.propName && param.propName != config.propName) {
                     throw new ConfigurationError("Unable to merge. Cannot change property name for auto-generated params", config)
                 }
-                // merging all non-empty properties except $idx
-                param.merge(config, { ignoreProps: ['$idx'] })
+                // merging all non-empty properties except $idx and insert value
+                param.merge(config, { ignoreProps: ['$idx'], insertProps: ['value'] })
                 // merging name if present
                 param.name = config.name || param.name
             } else {
@@ -233,5 +235,16 @@ export class ParamCollection extends Collection<Param>{
         return this._requiredParam
     }
 
+    /** A method to re-validate each item in collection */
+    public verify() {
+        var containsOptional = false
+        for (var param of this.getItems()) {
+            // required must not come after optional
+            if (containsOptional && param.required) {
+                throw new ConfigurationError('Required Parameter cannot be defined after optional parameter(s).', param)
+            }
+            containsOptional = !param.required
+        }
+    }
 }
 

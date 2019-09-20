@@ -298,7 +298,17 @@ function commandHelp(config: ProgramConfiguration, commandName?: string) {
     // Getting command from collection
     var command = config.commands.getByName(commandName)
 
-    if (!command) return
+    if (!command) {
+        console.log()
+        console.log('Command "' + boldText(commandName) + '" is not a valid command.')
+        if (config.commands.length) {
+            printCommandList(config, config.commands)
+            console.log()
+            console.log(boldText('See command help for more options:'))
+            console.log('\n   ' + config.binaryName + ' <command> --help, -h')
+        }
+        return;
+    }
 
     // print command usage
     printCommandUsage(config, command)

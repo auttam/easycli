@@ -7,7 +7,7 @@ describe("Cli decorator", () => {
     it("starts program automatically by default", () => {
         var testValue = 0
         @Cli()
-        class SimpleProgram { start() { testValue = 1 } }
+        class SimpleProgram { static run() { testValue = 1 } }
         expect(testValue).to.equal(1)
     })
 

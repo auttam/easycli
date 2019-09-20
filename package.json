@@ -1,6 +1,6 @@
 {
   "name": "@auttam/easycli",
-  "version": "1.0.0",
+  "version": "1.0.2",
   "description": "A quick and easy way of creating cli for your npm package.",
   "main": "index.js",
   "types": "index.d.ts",

@@ -104,11 +104,21 @@ export class RuntimeContext {
                 args[param.$idx] = $params[param.propName]
             }
         }
+        // inserting $param
         if (collection.indexParamsParam > -1) {
             args[collection.indexParamsParam] = $params
         }
+        // inserting $option
         if (collection.indexOptionsParam > -1) {
             args[collection.indexOptionsParam] = $options
+        }
+        // inserting spread parameter
+        if (collection.indexSpreadParam > -1 && args[collection.indexSpreadParam]) {
+            var spread = args[collection.indexSpreadParam]
+            // removing item from spread index
+            args.splice(collection.indexSpreadParam, 1)
+            // spreading param
+            args.splice(collection.indexSpreadParam, 0, ...spread)
         }
         return args
     }
@@ -243,12 +253,12 @@ export class RuntimeContext {
         if (!command) {
 
             // call 'onInvalidCommand'
-            if (this._commandIteration <= this._maxCommandIteration) {
+            if (this._program['onInvalidCommand'] && this._commandIteration <= this._maxCommandIteration) {
                 return this.call('onInvalidCommand', reqCommandName)
             }
 
             // finally show program help
-            return this._program.showHelp()
+            return this._program.showHelp(reqCommandName)
         }
 
         //  execute the command

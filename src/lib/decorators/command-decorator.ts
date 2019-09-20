@@ -18,17 +18,25 @@ export function commandDecoratorFactory(commandDefinition?: ICommandDefinition) 
         // getting program configuration object
         var config = ProgramConfiguration.injectConfiguration(target)
 
+        // setting decorator flag
+        config.decoratorsEnabled = true
+        
         if (!commandDefinition) {
             commandDefinition = {}
         }
 
+        // getting command
         var command: Command = config.commands.get(propertyName)
+
+        // otherwise creating new command
         if (!command) {
             command = new Command({
                 name: commandDefinition.name,
                 method: propertyName,
                 help: commandDefinition.help
             })
+            // reading params by method signature
+            command.params.initByMethod(descriptor.value)
         }
 
         // merging parameters

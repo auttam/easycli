@@ -103,11 +103,14 @@ export abstract class Collection<T> {
     /** Converts values into array */
     toArray(): T[] {
         return Array.from(this.getItems())
-    }    
+    }
 
     /** A method to validate the item being added, must throw error or return false to cancel adding */
     protected abstract validate(item: T): any
 
     /** A method called to after item is added, can be used to perform final tasks with the item added  */
     protected abstract itemAdded(item: T): void
+
+    /** A method to re-validate each item in collection */
+    public abstract verify(): void
 }

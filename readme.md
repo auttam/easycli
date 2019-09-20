@@ -1,7 +1,7 @@
-# Easy Cli
-A quick and easy way of creating command line tool for your npm package.
+# Easy CLI
+A quick and easy way of creating a command-line tool for npm package.
 
-## Quick Start
+## Quick Start Guide
 
 ### Installation
 
@@ -9,48 +9,51 @@ A quick and easy way of creating command line tool for your npm package.
 npm install @auttam/easycli
 ```
 
-#### Building a command line tool 
-Building a command line tool for npm package requires following -
+### Creating a simple CLI program with EasyCli
+Following is an example of a simple CLI program that accepts command-line arguments and prints a message to the console.
 
-1. A npm package
-2. A script that serves as a program for the command line tool. These scripts contains _hashbang for Node.js scripts_ and are normally kept in `bin` folder of npm package.
-3. An entry in `bin` key of `package.json` that maps a command to the program script
-
-##### Writing hello-world program
 1. Initialize new npm package if not already exists
-2. Install easycli package (see installation above)
-3. Create `bin/hello-world.js` file with following content -
+2. Install easy cli package (see the installation above)
+3. Create `bin/hello-world.js` script with the following code -
 
 ```javascript
 #!/usr/bin/env node
 const Program = require('@auttam/easycli').Program
 
-// Program Class
+// represents the CLI program
 class HelloWorld extends Program {
 
-    // entry point 
-    main(message) {
-        message = message || 'Hello World!'
+    // method called when CLI is invoked
+    // command-line arguments passed as the parameters
+    // parameter $options contains all the options 
+    main(message, $options) {
+        
+        message = message || 'Hello World'
+        
+        // checking if '-U' option is set
+        if ($options.$get('U')) {
+            message = message.toUpperCase()
+        }
+
+        // printing the message
         console.log(message)
     }
 }
 
-
-// Runs the program
+// Running the program
 Program.run(new HelloWorld())
 ```
 
-##### Running hello-world script
-
-The program created for command line can be tested locally as 
-
+Run the script using the following command -
 ```
-node ./bin/hello-world [arguments]
+node ./bin/hello-world "simple cli" -U
+
+# expected output
+# SIMPLE CLI
 ```
+To test the CLI tool globally -
 
-where _arguments_ is the list of the arguments program accepts.
-
-To install the tool globally update the `bin` field in package.json as following -
+Update the `bin` field in package.json as with a command as shown in example below and install the package globally -
 
 ```
 {
@@ -62,42 +65,114 @@ To install the tool globally update the `bin` field in package.json as following
 
 Try following commands (assuming package is installed globally) -
 
-`hello-world`
-
-output:
 ```
-Hello World!
+hello-world
+
+# expected output
+# SIMPLE CLI
 ```
+#### Cli Help
+EasyCli generates and displays the help for the CLI tool when `-h` or `--help` option is set. To view the help for the `hello-world` tool, run the script as following:
 
-`hello-world "good morning!"`
-
-output:
 ```
-good morning!
+node ./bin/hello-world -h 
 ```
+#### Cli Version
+Like help, easycli also displays version information when any of `-v`, `--ver`, or `--version` option is set:
 
-`hello-world --help`
-
-output:
-```
-Hello World v1.0.0
-
-Usage: hello-world <message>
-
-Parameters:
-
-   message
-
-Other usage:
-
-   hello-world --help, -h      To view help
-   hello-world --version, -v   To view help
+ ```
+node ./bin/hello-world -v 
 ```
 
-##### Configuring the program
-EasyCli generates a configuration dynamically for running program and generating help. For more complex uses, the configuration can be customized and extended by passing a configuration object to the constructor.
+### Creating a command based CLI program
+EasyCli supports two types of programs: a simple program like shown above which contains a "main" method that is called whenever CLI is invoked. All command-line arguments are interpreted as the parameters and options of this method. 
 
-Following code shows a simple example of adding configuration for the  `hello-world` program-
+Another type of program it supports is the command based program that contains multiple methods that are called based on the requested command. 
+
+Following is an example of a CLI program that accepts 3 different commands: `print-message`, `sum` and `test`.
+
+Create another script called `bin/demo-commands.js` and copy the following contents -
+
+```javascript
+#!/usr/bin/env node
+const Program = require('@auttam/easycli').Program
+
+// enable commands
+Program.settings({
+    enableCommands: true
+})
+
+// represents the CLI program
+class DemoCommands extends Program {
+
+    // method called when 'print-message' command is requested
+    // parameters work same as for main() method
+    printMessageCommand(message, $options) {
+        message = message || 'Hello World'
+
+        // checking if '-U' option is set
+        if ($options.$get('U')) {
+            message = message.toUpperCase()
+        }
+
+        // printing the message
+        console.log(message)
+    }
+
+    // method called when 'sum' command is requested
+    // parameters work same as for main() method
+    sumCommand(...numbers) {
+        if (!numbers.length) return
+        console.log('Result:', numbers.reduce((p, c) => p + c))
+    }
+
+    // method called when 'test' command is requested
+    // parameters work same as for main() method
+    testCommand($params, $options) {
+        console.log('This is a test command');
+        // log all parameters supplied to the cli program
+        console.log('params:', $params.$unknown);
+        //log all options supplied to the cli program
+        console.log('options:', $options.$unknown);
+    }
+
+}
+
+// Running the program
+Program.run(new DemoCommands())
+
+```
+To run the commands implemented above, run the script as shown in the following examples -
+```
+# 1. running print-message command
+node ./bin/demo-commands print-message "Hello Commands!"
+
+# expected output
+# Hello Commands!
+```
+```
+# 2. running sum command
+node ./bin/demo-commands sum 1 2 3 4 5
+
+# expected output
+# Result: 15
+```
+```
+# 3. running test command
+node ./bin/demo-commands test param1 param2 --option1 --option2 Yes
+
+# expected output
+# This is a test command
+# params: [ 'param1', 'param2' ]
+# options: { option1: true, option2: 'Yes' }
+```
+### Creating configuration
+
+EasyCli generates an internal configuration from the code that is used to run the program and to display CLI help. 
+
+This configuration can be customized or elaborated for more advanced uses.
+
+Following code shows how to add configuration for the `hello-world` program-
 
 ```javascript
 #!/usr/bin/env node
@@ -105,7 +180,7 @@ const Program = require('@auttam/easycli').Program
 
 // configuration object
 var config = {
-    help: 'This is a demo command line tool',
+    help: 'This is a demo command-line tool',
     params: [
         {
             name: 'message',
@@ -114,18 +189,63 @@ var config = {
     ]
 }
 
-// Program Class
+#!/usr/bin/env node
+const Program = require('@auttam/easycli').Program
+
+// represents the CLI program
 class HelloWorld extends Program {
 
-    // entry point 
-    main(message) {
-        message = message || 'Hello World!'
+    // method called when CLI is invoked
+    // command-line arguments passed as the parameters
+    // parameter $options contains all the options 
+    main(message, $options) {
+        
+        message = message || 'Hello World'
+        
+        // checking if '-U' option is set
+        if ($options.$get('U')) {
+            message = message.toUpperCase()
+        }
+
+        // printing the message
         console.log(message)
     }
 }
 
-
-// Runs the program with configuration
+// Running the program
 Program.run(new HelloWorld(config))
 ```
-The configuration shown above just adds a help text to the program and its `message` parameter, but configuration can be added for several other things. For example more parameters, options with aliases, declaring different reference names for parameters and options, specifying default values or predefined list of accepted values, aliases for options, changing program info etc.  
+Run the script again with `-h` or `--help` option and notice how help now shows help text for `message` parameter.
+
+```
+node ./bin/hello-world -h 
+```
+
+Though the configuration shown above just adds the help text to the program and to its `message` parameter, several other things can be configured. See [CLI Configuration](https://github.com/auttam/easycli/wiki/CLI-Configuration) wiki on github for information.
+
+#### Using Decorators
+
+EasyCli also provides decorators that can be used in typescript based npm packages to configure program and commands. 
+
+```typescript
+// import base program class and decorators
+import { Program, Cli, Command, required } from '@auttam/easycli'
+
+Program.settings({
+    enableCommands: true
+})
+
+@Cli()
+class DemoProgram extends Program {
+    @Command()
+    print(@required message: string) {
+        console.log(message)
+    }
+}
+
+```
+For more information on decorators visit [decorators page](https://github.com/auttam/easycli/wiki/EasyCli-Decorators)
+
+### More Help and Tutorials
+
+For more help and tutorials visit the [EasyCli Wiki](https://github.com/auttam/easycli/wiki).
