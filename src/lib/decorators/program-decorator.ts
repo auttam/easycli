@@ -1,13 +1,14 @@
 import { ProgramConfiguration } from '../config/program-config'
 import { IProgramDefinition } from './types'
 import { RuntimeError } from '../errors/runtime-error'
+import { ConfigurationError } from '../errors/config-error';
 
 /**
  * Creates decorator for program class
  * Decorator updates the program information to the program configuration object and
  * Runs the program
  */
-export function programDecoratorFactory(programDefinition?: IProgramDefinition) {
+export function programDecoratorFactory(programDefinition?: IProgramDefinition, cbExecPromise?: (promise?: any) => any) {
     return function (targetConstructor: any) {
 
         // Updating program description
@@ -40,12 +41,17 @@ export function programDecoratorFactory(programDefinition?: IProgramDefinition) 
             }
         }
 
-        // instancing program
+        // running program
         try {
-            new targetConstructor().start()
+            var progPromise = targetConstructor.run(new targetConstructor())
+
+            // passing final promise to the caller
+            if (typeof cbExecPromise == "function") {
+                cbExecPromise(progPromise)
+            }
         }
         catch (ex) {
-            throw new RuntimeError('Error while running the program', ex)
+            console.log(ex)
         }
     }
 }
