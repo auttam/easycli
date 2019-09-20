@@ -22,13 +22,18 @@ export function commandDecoratorFactory(commandDefinition?: ICommandDefinition) 
             commandDefinition = {}
         }
 
+        // getting command
         var command: Command = config.commands.get(propertyName)
+
+        // otherwise creating new command
         if (!command) {
             command = new Command({
                 name: commandDefinition.name,
                 method: propertyName,
                 help: commandDefinition.help
             })
+            // reading params by method signature
+            command.params.initByMethod(descriptor.value)
         }
 
         // merging parameters
