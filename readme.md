@@ -221,6 +221,31 @@ Run the script again with `-h` or `--help` option and notice how help now shows 
 node ./bin/hello-world -h 
 ```
 
-Though the configuration shown above just adds the help texts to the program and to its `message` parameter, several other things can be configured. See [CLI Configuration](https://github.com/auttam/easycli/wiki/CLI-Configuration) wiki on github for information.
+Though the configuration shown above just adds the help text to the program and to its `message` parameter, several other things can be configured. See [CLI Configuration](https://github.com/auttam/easycli/wiki/CLI-Configuration) wiki on github for information.
 
-For more information visit [wiki](https://github.com/auttam/easycli/wiki) page.
+#### Using Decorators
+
+EasyCli also provides decorators that can be used in typescript based npm packages to configure program and commands. 
+
+```typescript
+// import base program class and decorators
+import { Program, Cli, Command, required } from '@auttam/easycli'
+
+Program.settings({
+    enableCommands: true
+})
+
+@Cli()
+class DemoProgram extends Program {
+    @Command()
+    print(@required message: string) {
+        console.log(message)
+    }
+}
+
+```
+For more information on decorators visit [decorators page](https://github.com/auttam/easycli/wiki/EasyCli-Decorators)
+
+### More Help and Tutorials
+
+For more help and tutorials visit the [EasyCli Wiki](https://github.com/auttam/easycli/wiki).
