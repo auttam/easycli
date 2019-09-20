@@ -253,12 +253,12 @@ export class RuntimeContext {
         if (!command) {
 
             // call 'onInvalidCommand'
-            if (this._commandIteration <= this._maxCommandIteration) {
+            if (this._program['onInvalidCommand'] && this._commandIteration <= this._maxCommandIteration) {
                 return this.call('onInvalidCommand', reqCommandName)
             }
 
             // finally show program help
-            return this._program.showHelp()
+            return this._program.showHelp(reqCommandName)
         }
 
         //  execute the command
