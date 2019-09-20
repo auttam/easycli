@@ -115,4 +115,7 @@ export class OptionCollection extends Collection<Option>{
         // add property name to the defined property name list
         this._propNames[item.propName] = item.name
     }
+
+    /** A method to re-validate each item in collection */
+    public verify() { }
 }

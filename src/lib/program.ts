@@ -14,6 +14,11 @@ export class Program {
         // setting 'config' with new or already injected configuration object
         this.config = ProgramConfiguration.injectConfiguration(this)
 
+        // validate config if decorators are used
+        if (this.config.decoratorsEnabled) {
+            this.config.verify()
+        }
+
         // merging configuration to the program's config object 
         this.config.merge(configuration)
 

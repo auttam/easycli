@@ -14,6 +14,10 @@ export function programDecoratorFactory(programDefinition?: IProgramDefinition, 
         // Updating program description
         if (programDefinition) {
             let config: ProgramConfiguration = ProgramConfiguration.injectConfiguration(targetConstructor.prototype)
+
+            // setting decorator flag
+            config.decoratorsEnabled = true
+            
             config.merge({
                 name: programDefinition.name,
                 help: programDefinition.help,

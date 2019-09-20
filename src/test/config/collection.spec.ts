@@ -20,6 +20,7 @@ class CollectionTest extends Collection<{ name: string, value: string }> {
         return true
     }
     protected itemAdded(item: { name: string; value: string; }): void { }
+    public verify() { }
 }
 
 describe('Collection Class Tests', function () {

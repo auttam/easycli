@@ -18,6 +18,9 @@ export function commandDecoratorFactory(commandDefinition?: ICommandDefinition) 
         // getting program configuration object
         var config = ProgramConfiguration.injectConfiguration(target)
 
+        // setting decorator flag
+        config.decoratorsEnabled = true
+        
         if (!commandDefinition) {
             commandDefinition = {}
         }
