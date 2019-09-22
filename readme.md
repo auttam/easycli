@@ -189,9 +189,6 @@ var config = {
     ]
 }
 
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
-
 // represents the CLI program
 class HelloWorld extends Program {
 
