@@ -1,3 +1,5 @@
+![npm version](https://badgen.net/npm/v/@auttam/easycli) ![ts](https://badgen.net/badge/Built%20With/TypeScript/blue) ![MIT](https://badgen.net/badge/license/MIT/green)
+
 # Easy CLI
 A quick and easy way of creating a command-line tool for npm package.
 
