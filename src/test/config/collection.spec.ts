@@ -1,5 +1,5 @@
 const expect = require('chai').expect
-import { Collection } from '../../lib/config/Collection'
+import { Collection } from '../../lib/config/collection'
 import { ConfigurationError } from "../../lib/errors/config-error"
 
 
