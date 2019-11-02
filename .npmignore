@@ -23,8 +23,5 @@ tsconfig.json
 *.tgz
 demo
 
-# test specs
-test/
-
 # images
 img/
