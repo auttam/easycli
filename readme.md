@@ -5,6 +5,8 @@ A quick and easy way of creating a command-line tool for npm package.
 
 https://repl.it/@auttam/EasyCli-Examples
 
+![](https://github.com/auttam/easycli/blob/development/img/easycli-gif)
+
 ## Quick Start Guide
 
 ### Installation
