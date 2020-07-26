@@ -1,254 +1,152 @@
-![npm version](https://badgen.net/npm/v/@auttam/easycli) ![ts](https://badgen.net/badge/Built%20With/TypeScript/blue) ![MIT](https://badgen.net/badge/license/MIT/green)
-
 # Easy CLI
-A quick and easy way of creating a command-line tool for npm package.
 
-https://repl.it/@auttam/EasyCli-Examples
-
-![](https://raw.githubusercontent.com/auttam/easycli/master/img/easycli.gif)
-
-## Quick Start Guide
-
-### Installation
+## Installation
+Install **@auttam/easycli** package
 
 ```
 npm install @auttam/easycli
 ```
 
-### Creating a simple CLI program with EasyCli
-Following is an example of a simple CLI program that accepts command-line arguments and prints a message to the console.
+## Example # 1
 
-1. Initialize new npm package if not already exists
-2. Install easy cli package (see the installation above)
-3. Create `bin/hello-world.js` script with the following code -
+```js
+const { Program } = require('@auttam/easycli');
 
-```javascript
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
-
-// represents the CLI program
 class HelloWorld extends Program {
 
-    // method called when CLI is invoked
-    // command-line arguments passed as the parameters
-    // parameter $options contains all the options 
-    main(message, $options) {
-        
-        message = message || 'Hello World'
-        
-        // checking if '-U' option is set
-        if ($options.$get('U')) {
-            message = message.toUpperCase()
+    main(message, $options){
+        // use default message if message not from the cli
+        let greetMessage = message || "Hello World!";        
+
+        // check for the underline options
+        if($options.$has("u", "U", "underline")) {
+            greetMessage = `\u001b[4m${greetMessage}\u001b[0m`;
         }
 
-        // printing the message
-        console.log(message)
+        // check of the color options
+        if($options.$has("c", "C", "color")) {
+            greetMessage = `\u001b[32m${greetMessage}\u001b[0m`;
+        }
+
+        console.log(greetMessage);
     }
 }
 
-// Running the program
-Program.run(new HelloWorld())
+// run the program
+Program.run(new HelloWorld());
 ```
 
-Run the script using the following command -
-```
-node ./bin/hello-world "simple cli" -U
-
-# expected output
-# SIMPLE CLI
-```
-To test the CLI tool globally -
-
-Update the `bin` field in package.json as with a command as shown in example below and install the package globally -
+To test, save the example above as `bin/hello-world.js` file and run the following commands -
 
 ```
-{
-    "bin":{
-        "hello-world" : "bin/hello-world"
-    }
-}
-```
+node ./bin/hello-world
+# output: Hello World!
 
-Try following commands (assuming package is installed globally) -
+node ./bin/hello-world "Test Message"
+# output: Test Message
 
-```
-hello-world
+node ./bin/hello-world -cu
+# displays 'Hello World!' with underline and green color
 
-# expected output
-# SIMPLE CLI
-```
-#### Cli Help
-EasyCli generates and displays the help for the CLI tool when `-h` or `--help` option is set. To view the help for the `hello-world` tool, run the script as following:
-
-```
 node ./bin/hello-world -h 
-```
-#### Cli Version
-Like help, easycli also displays version information when any of `-v`, `--ver`, or `--version` option is set:
+# displays help
 
- ```
-node ./bin/hello-world -v 
+node ./bin/hello-world -v
+# displays cli version which is by default '1.0.0'
 ```
 
-### Creating a command based CLI program
-EasyCli supports two types of programs: a simple program like shown above which contains a "main" method that is called whenever CLI is invoked. All command-line arguments are interpreted as the parameters and options of this method. 
+- All the *non-option* command-line arguments are passed as the parameters of the `main()` method
+- Add `$params` parameter to the `main()` method to access all the parameters supplied from the cli
+- Add `$options` parameter to the `main()` method to access all options supplied from the cli
+    - Use `$options.$has(...names)` to check if any of the option from the list is set
+    - Use `$options.$get(name)` to get the value supplied with the option e.g. `node ./bin/hello-world --value_option=my_value`
+    - To access options by name e.g. `$options.underline` when any of `-u`, `-U` or `--underline` option is set, add program configuration. Find more information [here](https://github.com/auttam/easycli/wiki/CLI-Configuration).
 
-Another type of program it supports is the command based program that contains multiple methods that are called based on the requested command. 
-
-Following is an example of a CLI program that accepts 3 different commands: `print-message`, `sum` and `test`.
-
-Create another script called `bin/demo-commands.js` and copy the following contents -
-
-```javascript
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
+## Example # 2
+```js
+const { Program } = require("@auttam/easycli");
 
 // enable commands
 Program.settings({
-    enableCommands: true
-})
+  enableCommands: true,
+});
 
-// represents the CLI program
-class DemoCommands extends Program {
+class SimpleCalculator extends Program {
+  divideCommand(dividend, divisor) {
+    if (isNaN(dividend) || isNaN(divisor)) {
+      console.log("dividend and divisor must be numbers");
+      return;
+    }
+    console.log(`${dividend}/${divisor} = ${dividend / divisor}`);
+  }
 
-    // method called when 'print-message' command is requested
-    // parameters work same as for main() method
-    printMessageCommand(message, $options) {
-        message = message || 'Hello World'
-
-        // checking if '-U' option is set
-        if ($options.$get('U')) {
-            message = message.toUpperCase()
-        }
-
-        // printing the message
-        console.log(message)
+  addCommand(...numbers) {
+    // due to configuration added below,
+    // the numbers parameter will never be empty
+    if (numbers.some((item) => isNaN(item))) {
+      console.log("All parameters must be numbers");
+      return;
     }
 
-    // method called when 'sum' command is requested
-    // parameters work same as for main() method
-    sumCommand(...numbers) {
-        if (!numbers.length) return
-        console.log('Result:', numbers.reduce((p, c) => p + c))
-    }
-
-    // method called when 'test' command is requested
-    // parameters work same as for main() method
-    testCommand($params, $options) {
-        console.log('This is a test command');
-        // log all parameters supplied to the cli program
-        console.log('params:', $params.$unknown);
-        //log all options supplied to the cli program
-        console.log('options:', $options.$unknown);
-    }
-
+    const total = numbers.reduce((sum, number) => sum + number);
+    console.log(`${numbers.join("+")} = ${total}`);
+  }
 }
 
-// Running the program
-Program.run(new DemoCommands())
+// add configuration and run program
+Program.run(
+  new SimpleCalculator({
+    commands: [
+      {
+        name: "add",
+        method:"addCommand",
+        params: [
+          {
+            name: "numbers",
+            required: true,
+          }
+        ],
+      },
+    ],
+  })
+);
+```
+To test, save the example above as `bin/simple-calculator.js` file and run following commands -
 
 ```
-To run the commands implemented above, run the script as shown in the following examples -
-```
-# 1. running print-message command
-node ./bin/demo-commands print-message "Hello Commands!"
+# Displays list of available commands
+node ./bin/simple-calculator
 
-# expected output
-# Hello Commands!
-```
-```
-# 2. running sum command
-node ./bin/demo-commands sum 1 2 3 4 5
+# Runs add command
+node ./bin/simple-calculator add 5 5 5
+# output: 5+5+5 = 15
 
-# expected output
-# Result: 15
-```
-```
-# 3. running test command
-node ./bin/demo-commands test param1 param2 --option1 --option2 Yes
-
-# expected output
-# This is a test command
-# params: [ 'param1', 'param2' ]
-# options: { option1: true, option2: 'Yes' }
-```
-### Creating configuration
-
-EasyCli generates an internal configuration from the code that is used to run the program and to display CLI help. 
-
-This configuration can be customized or elaborated for more advanced uses.
-
-Following code shows how to add configuration for the `hello-world` program-
-
-```javascript
-#!/usr/bin/env node
-const Program = require('@auttam/easycli').Program
-
-// configuration object
-var config = {
-    help: 'This is a demo command-line tool',
-    params: [
-        {
-            name: 'message',
-            help: 'message to print'
-        }
-    ]
-}
-
-// represents the CLI program
-class HelloWorld extends Program {
-
-    // method called when CLI is invoked
-    // command-line arguments passed as the parameters
-    // parameter $options contains all the options 
-    main(message, $options) {
-        
-        message = message || 'Hello World'
-        
-        // checking if '-U' option is set
-        if ($options.$get('U')) {
-            message = message.toUpperCase()
-        }
-
-        // printing the message
-        console.log(message)
-    }
-}
-
-// Running the program
-Program.run(new HelloWorld(config))
-```
-Run the script again with `-h` or `--help` option and notice how help now shows help text for `message` parameter.
-
-```
-node ./bin/hello-world -h 
+# Runs divide command
+node ./bin/simple-calculator divide 5 2
+# output: 5/2 = 2.5
 ```
 
-Though the configuration shown above just adds the help text to the program and to its `message` parameter, several other things can be configured. See [CLI Configuration](https://github.com/auttam/easycli/wiki/CLI-Configuration) wiki on github for information.
+Printing CLI help using `node ./bin/simple-calculator -h`
+```
+Simple Calculator v1.0.0
 
-#### Using Decorators
+Usage: simple-calculator <command>
 
-EasyCli also provides decorators that can be used in typescript based npm packages to configure program and commands. 
+Available Commands:
 
-```typescript
-// import base program class and decorators
-import { Program, Cli, Command, required } from '@auttam/easycli'
+   divide
+   add
 
-Program.settings({
-    enableCommands: true
-})
+See command help for more options
 
-@Cli()
-class DemoProgram extends Program {
-    @Command()
-    print(@required message: string) {
-        console.log(message)
-    }
-}
+Other usage:
+
+   simple-calculator --help, -h             To view help
+   simple-calculator <command> --help, -h   To view command help
+   simple-calculator --version, -v          To view help
+   simple-calculator help                   To view help
 
 ```
-For more information on decorators visit [decorators page](https://github.com/auttam/easycli/wiki/EasyCli-Decorators)
 
-### More Help and Tutorials
-
-For more help and tutorials visit the [EasyCli Wiki](https://github.com/auttam/easycli/wiki).
+## More help 
+Quick start guide and more help [available here](https://github.com/auttam/easycli/wiki)
