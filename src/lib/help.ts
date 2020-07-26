@@ -182,11 +182,22 @@ function printOptionList(options: OptionCollection) {
 
     var columnCollection = []
     for (var option of options.getItems()) {
-        var optionInfo = '--' + option.name
-        columnCollection.push(['--' + option.name, option.help || ''])
-        if (option.aliases && Array.isArray(option.aliases) && option.aliases.length) {
-            var aliases = option.aliases.map(name => (name.length == 1 ? '-' + name : '--' + name)).join(', ')
-            columnCollection.push(['', boldText('Other Names: ') + aliases])
+        let optionName = [];
+        let otherNames:string[] = [];
+        if(Array.isArray(option.aliases) && option.aliases.length){
+            option.aliases.forEach((name)=>{
+    
+                if(name.length==1){
+                    optionName.push('-' + name);
+                } else {
+                    otherNames.push('--' + name)
+                }
+            });
+        }
+        optionName.push('--'+option.name);
+        columnCollection.push([optionName.join(', '), option.help || 'no help text'])
+        if(otherNames.length){
+            columnCollection.push(['', boldText('Other Names: ') + otherNames.join(', ')])
         }
     }
     // printing command list
