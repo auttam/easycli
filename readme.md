@@ -15,15 +15,15 @@ const { Program } = require('@auttam/easycli');
 class HelloWorld extends Program {
 
     main(message, $options){
-        // use user message if supplied from cli
+        // use default message if message not from the cli
         let greetMessage = message || "Hello World!";        
 
-        // check for underline options
+        // check for the underline options
         if($options.$has("u", "U", "underline")) {
             greetMessage = `\u001b[4m${greetMessage}\u001b[0m`;
         }
 
-        // check of color options
+        // check of the color options
         if($options.$has("c", "C", "color")) {
             greetMessage = `\u001b[32m${greetMessage}\u001b[0m`;
         }
@@ -32,33 +32,34 @@ class HelloWorld extends Program {
     }
 }
 
+// run the program
 Program.run(new HelloWorld());
 ```
 
-To test the above class, save it as `bin/hello-world.js` and run following commands -
+To test, save the example above as `bin/hello-world.js` file and run the following commands -
 
 ```
-# Displays default text
 node ./bin/hello-world
+# output: Hello World!
 
-# Displays custom message
 node ./bin/hello-world "Test Message"
+# output: Test Message
 
-# Displays colored and underlined message
 node ./bin/hello-world -cu
+# displays 'Hello World!' with underline and green color
 
-# Displays Help
 node ./bin/hello-world -h 
+# displays help
 
-# Displays Version of hello-world cli
 node ./bin/hello-world -v
+# displays cli version which is by default '1.0.0'
 ```
 
-- The non-option, command-line arguments are passed as the parametersof the `main()` method
+- All the *non-option* command-line arguments are passed as the parameters of the `main()` method
 - Add `$params` parameter to the `main()` method to access all the parameters supplied from the cli
 - Add `$options` parameter to the `main()` method to access all options supplied from the cli
     - Use `$options.$has(...names)` to check if any of the option from the list is set
-    - Use `$options.$get(name)` to get the value supplied for the option e.g. `node ./bin/hello-world --value_option=my_value`
+    - Use `$options.$get(name)` to get the value supplied with the option e.g. `node ./bin/hello-world --value_option=my_value`
     - To access options by name e.g. `$options.underline` when any of `-u`, `-U` or `--underline` option is set, add program configuration. Find more information [here](https://github.com/auttam/easycli/wiki/CLI-Configuration).
 
 ## Example # 2
@@ -110,7 +111,7 @@ Program.run(
   })
 );
 ```
-To test the above class, save it as `bin/simple-calculator.js` and run following commands -
+To test, save the example above as `bin/simple-calculator.js` file and run following commands -
 
 ```
 # Displays list of available commands
@@ -148,4 +149,4 @@ Other usage:
 ```
 
 ## More help 
-More help available [here](https://github.com/auttam/easycli/wiki)
+Quick start guide and more help [available here](https://github.com/auttam/easycli/wiki)
